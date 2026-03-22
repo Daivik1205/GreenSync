@@ -62,6 +62,7 @@ GreenSync/
 ├── supabase/                  # DB schema + queries
 ├── model/                     # Saved model artefacts
 ├── explore_network.py         # One-time utility: dump TL + edge IDs
+├── run.sh                     # Launcher: sets X11 env vars + runs pipeline
 └── requirements.txt
 ```
 
@@ -71,7 +72,7 @@ GreenSync/
 
 | Phase | Module | Status | Description |
 |-------|--------|--------|-------------|
-| 1 | `simulation/` | ✅ Done | SUMO + TraCI interface, Bengaluru map |
+| 1 | `simulation/` | ✅ Done | SUMO + TraCI interface, Bengaluru map, signal states, edge data |
 | 2 | `rsu/` | 🔧 In progress | RSU zone sensing via TraCI |
 | 3 | `communication/` | 🔧 In progress | MQTT pub/sub |
 | 4 | `event_classifier/` | ⏳ Pending | Rule-based event detection |
@@ -144,25 +145,40 @@ source venv/bin/activate
 python main.py
 ```
 
-### With SUMO GUI (macOS dev)
+Terminal output every 50 steps shows up to 20 live vehicles with speed (km/h), coordinates (x, y) and edge ID:
 
-**Terminal 1** — launch sumo-gui natively via XQuartz:
+```
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+  Step   100 | Total vehicles:  81 | Zones: 0
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+  ID       Speed (km/h)          X          Y  Edge
+  -------- ------------ ---------- ----------  --------------------
+  0              42.3   77423.12  14231.88   132191814#3
+  1               0.0   77198.44  14109.23   763175325#1
+```
+
+### With SUMO GUI (macOS dev — two terminals)
+
+**Terminal 1** — open the visual map:
 
 ```bash
 export DISPLAY=:0 XAUTHORITY=~/.Xauthority
 export PROJ_DATA="venv/lib/python3.12/site-packages/sumo/data/proj"
 export FONTCONFIG_FILE=/opt/homebrew/etc/fonts/fonts.conf
 source venv/bin/activate
-sumo-gui -c greensync_phase1/map.sumocfg --remote-port 8813 --start --delay 100
+sumo-gui -c greensync_phase1/map.sumocfg
 ```
 
-**Terminal 2** — connect Python to the running GUI:
+Click ▶ Play to watch vehicles moving on Bengaluru roads.
+
+**Terminal 2** — run the data pipeline:
 
 ```bash
-# Set HEADLESS = False in main.py first
 source venv/bin/activate
 python main.py
 ```
+
+> Note: on macOS the GUI and pipeline run as independent processes due to XQuartz subprocess constraints. For RPi deployment both run headlessly in a single process.
 
 ### Explore the SUMO network
 
