@@ -5,7 +5,8 @@ import sys
 if 'SUMO_HOME' not in os.environ:
     sys.exit("SUMO_HOME not set")
 
-sumoCmd = ["sumo-gui", "-c", "map.sumocfg"]
+BASE_DIR = os.path.dirname(os.path.abspath(__file__))
+sumoCmd = ["sumo-gui", "-c", os.path.join(BASE_DIR, "map.sumocfg")]
 traci.start(sumoCmd)
 
 step = 0

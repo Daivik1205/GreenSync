@@ -7,18 +7,38 @@ import traci
 import os
 import sys
 
-SUMO_CFG = "../greensync_phase1/map.sumocfg"
+SUMO_CFG = os.path.join(os.path.dirname(os.path.abspath(__file__)), "..", "greensync_phase1", "map.sumocfg")
 
 
-def start(headless: bool = True):
+GUI_TRACI_PORT = 8813   # port used when launching sumo-gui externally via `open -a`
+
+def start(headless: bool = True, gui_port: int = None):
     """
-    Start SUMO. Use headless=False for GUI during development.
+    Start SUMO or connect to an already-running SUMO GUI instance.
+
+    Modes:
+      headless=True            → launch sumo (no window) — for dev + RPi
+      headless=False           → connect to externally launched sumo-gui
+                                 (launch it first via the shell script below)
+
+    macOS GUI launch command (run in a separate terminal FIRST):
+      open -a "/Applications/SUMO sumo-gui.app" --args \\
+        -c "<abs_path>/greensync_phase1/map.sumocfg" \\
+        --remote-port 8813 --start --delay 100
+
+    Then run python main.py normally — TraCI will connect to port 8813.
     """
     if 'SUMO_HOME' not in os.environ:
-        sys.exit("SUMO_HOME not set")
+        print("WARNING: SUMO_HOME not set — XML validation disabled. Continuing anyway.")
 
-    binary = "sumo" if headless else "sumo-gui"
-    traci.start([binary, "-c", SUMO_CFG])
+    if headless:
+        cmd = ["sumo", "-c", SUMO_CFG, "--no-step-log"]
+        traci.start(cmd)
+    else:
+        port = gui_port or GUI_TRACI_PORT
+        print(f"Connecting to external SUMO GUI on port {port}...")
+        print("Make sure you launched sumo-gui first with --remote-port 8813")
+        traci.connect(port)
 
 
 def step() -> list[dict]:

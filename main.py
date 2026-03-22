@@ -24,7 +24,7 @@ from routing.router import find_route, zones_to_sumo_edges
 
 # TODO: import AI models once trained
 
-HEADLESS = True
+HEADLESS = False   # False = connect to externally launched sumo-gui (see traci_interface.py for launch cmd)
 MAX_STEPS = None   # None = run indefinitely
 
 
