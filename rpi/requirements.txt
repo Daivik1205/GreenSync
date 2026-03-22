@@ -1,0 +1,8 @@
+xgboost
+scikit-learn
+pandas
+numpy
+paho-mqtt
+supabase
+python-dotenv
+requests

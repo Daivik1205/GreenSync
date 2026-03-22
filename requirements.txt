@@ -1,0 +1,35 @@
+# Core Python utilities
+numpy
+pandas
+
+# SUMO + TraCI (simulation interface)
+traci
+sumolib
+
+# MQTT communication (6G simulation layer)
+paho-mqtt
+
+# Backend / APIs (optional but useful)
+fastapi
+uvicorn
+
+# Graph / Digital Twin
+networkx
+
+# Machine Learning
+scikit-learn
+xgboost
+torch
+
+# Data streaming / async (optional but useful)
+asyncio
+
+# Serialization / configs
+pyyaml
+
+# Visualization (dashboard)
+streamlit
+matplotlib
+
+# Logging & debugging
+loguru
