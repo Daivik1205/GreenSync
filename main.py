@@ -50,6 +50,10 @@ def build_zones():
     Must be called AFTER traci.start() — needs live TraCI connection.
     Draws non-overlapping outline circles for each zone on the SUMO GUI.
     """
+    import traci as _traci
+    # Fetch the full edge list ONCE — used to validate zone extra_edges
+    valid_edges = set(_traci.edge.getIDList())
+
     zones = []
     print("\n📡 Building RSU zones...")
     for defn in ZONE_DEFINITIONS:
@@ -57,6 +61,7 @@ def build_zones():
             zone_id     = defn["zone_id"],
             tl_ids      = defn["tl_ids"],
             extra_edges = defn.get("extra_edges", []),
+            valid_edges = valid_edges,
         )
         zones.append(zone)
 

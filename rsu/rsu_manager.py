@@ -148,17 +148,30 @@ def _draw_zone_outline(zone: Zone):
 
 # ── Public API ────────────────────────────────────────────────────────────────
 
-def build_zone(zone_id: str, tl_ids: list[str], extra_edges: list = None) -> Zone:
+def build_zone(zone_id: str, tl_ids: list[str], extra_edges: list = None,
+               valid_edges: set = None) -> Zone:
     """
     Build a Zone:
       1. Auto-discover edges from TL controlled lanes
       2. Merge with extra_edges
-      3. Compute centroid from junction positions
-      4. Draw initial outline polygon (radius assigned later by assign_radii())
+      3. Validate against the live SUMO network (drop unknown edges silently)
+      4. Compute centroid from junction positions
+      5. Draw initial outline polygon (radius assigned later by assign_radii())
+
+    valid_edges: pass the result of traci.edge.getIDList() once at startup
+                 to avoid per-build TraCI calls and silence "not known" errors.
     """
     edges = _discover_edges(tl_ids)
     if extra_edges:
         edges.update(e for e in extra_edges if not e.startswith(":"))
+
+    # Drop any edge that doesn't exist in this SUMO network
+    if valid_edges is not None:
+        before = len(edges)
+        edges  = edges & valid_edges
+        dropped = before - len(edges)
+        if dropped:
+            print(f"   ⚠️  {zone_id}: dropped {dropped} unknown extra_edges")
 
     cx, cy = _centroid(tl_ids)
     zone   = Zone(zone_id=zone_id, tl_ids=tl_ids, edge_ids=edges, cx=cx, cy=cy)
