@@ -25,7 +25,7 @@ from simulation.traci_interface  import (start, step, get_all_traffic_light_ids,
 from rsu.rsu_manager             import build_zone, assign_radii, sense_all_zones
 from rsu.zones_config            import ZONE_DEFINITIONS
 from rsu.edge_detector           import (sense_edges, color_edges, reset_edge_colors,
-                                          prime_edge_cache)
+                                          prime_edge_cache, init_edge_colors)
 from communication.publisher     import (connect as mqtt_connect, publish_zone_state,
                                           publish_signal_phase, disconnect as mqtt_disconnect)
 from event_classifier.classifier import classify
@@ -124,10 +124,16 @@ def run():
     zones     = build_zones()
     all_edges = _all_zone_edges(zones)
 
-    # Pre-fetch speed limits + lane counts once — used for smooth colour gradient
+    # Pre-fetch speed limits + lane counts once (zero TraCI overhead per step)
     print("🎨 Priming edge colour cache...")
     prime_edge_cache(all_edges)
-    print(f"   {len(all_edges)} edges cached\n")
+    print(f"   {len(all_edges)} edges cached")
+
+    # Paint all monitored roads dark-grey immediately so they are visually
+    # distinct from the rest of the network from step 0.
+    if not HEADLESS:
+        init_edge_colors(all_edges)
+        print("   Monitored roads initialised (dark-grey)\n")
 
     mqtt = mqtt_connect()
     twin = DigitalTwin()
