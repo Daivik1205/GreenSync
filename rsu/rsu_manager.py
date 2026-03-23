@@ -19,7 +19,7 @@
 import math
 import traci
 from dataclasses import dataclass, field
-from rsu.edge_detector import EdgeState, sense_edges, color_edges
+from rsu.edge_detector import EdgeState
 
 
 # ── Zone outline visual settings ─────────────────────────────────────────────
@@ -147,6 +147,24 @@ def _draw_zone_outline(zone: Zone):
 
 
 # ── Public API ────────────────────────────────────────────────────────────────
+
+def build_zone_from_def(zdef, valid_edges: set = None) -> "Zone":
+    """
+    Convert a ZoneDef (from zone_builder.py) into a full Zone object.
+    Optionally filters edge_ids against valid_edges to drop unknown edges.
+    Call assign_radii([…]) afterward to compute non-overlapping GUI radii.
+    """
+    edges = zdef.edge_ids
+    if valid_edges is not None:
+        edges = edges & valid_edges
+    return Zone(
+        zone_id  = zdef.zone_id,
+        tl_ids   = [zdef.tl_id],
+        edge_ids = edges,
+        cx       = zdef.center_x,
+        cy       = zdef.center_y,
+    )
+
 
 def build_zone(zone_id: str, tl_ids: list[str], extra_edges: list = None,
                valid_edges: set = None) -> Zone:
