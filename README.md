@@ -63,7 +63,10 @@ GreenSync/
 ├── model/                     # Saved model artefacts
 ├── explore_network.py         # One-time utility: dump TL + edge IDs
 ├── run.sh                     # Launcher: sets X11 env vars + runs pipeline
-└── requirements.txt
+├── requirements.txt
+└── rsu/
+    ├── zones_config.py        # 6 RSU zone definitions (TL IDs + extra edges)
+    └── rsu_manager.py         # Zone sensing, event detection, GUI polygon overlay
 ```
 
 ---
@@ -73,7 +76,7 @@ GreenSync/
 | Phase | Module | Status | Description |
 |-------|--------|--------|-------------|
 | 1 | `simulation/` | ✅ Done | SUMO + TraCI interface, Bengaluru map, signal states, edge data |
-| 2 | `rsu/` | 🔧 In progress | RSU zone sensing via TraCI |
+| 2 | `rsu/` | ✅ Done | 6 RSU zones, auto edge discovery, GUI polygon overlay, event detection |
 | 3 | `communication/` | 🔧 In progress | MQTT pub/sub |
 | 4 | `event_classifier/` | ⏳ Pending | Rule-based event detection |
 | 5 | `digital_twin/` | ⏳ Pending | Real-time city state graph |

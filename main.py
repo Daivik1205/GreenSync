@@ -6,7 +6,7 @@
 #
 # Data flow:
 #   simulation.step()          Phase 1: raw vehicle state
-#   rsu.sense_all_zones()      Phase 2: zone density + speed
+#   rsu.sense_all_zones()      Phase 2: zone density + speed + GUI polygons
 #   publisher.publish_*()      Phase 3: MQTT broadcast
 #   classifier.classify()      Phase 4: structured events
 #   twin.update_zone()         Phase 5: digital twin state update
@@ -17,96 +17,127 @@
 
 import time
 
-from simulation.traci_interface import start, step, get_all_traffic_light_ids, get_traffic_light_state, reroute_vehicle, stop
-from rsu.rsu_manager import Zone, sense_all_zones
-from communication.publisher import connect as mqtt_connect, publish_zone_state, publish_signal_phase, disconnect as mqtt_disconnect
+from simulation.traci_interface  import (start, step, get_all_traffic_light_ids,
+                                          get_traffic_light_state, reroute_vehicle, stop)
+from rsu.rsu_manager             import build_zone, sense_all_zones, update_zone_visual
+from rsu.zones_config            import ZONE_DEFINITIONS
+from communication.publisher     import (connect as mqtt_connect, publish_zone_state,
+                                          publish_signal_phase, disconnect as mqtt_disconnect)
 from event_classifier.classifier import classify
-from digital_twin.twin import DigitalTwin
-from routing.router import find_route, zones_to_sumo_edges
+from digital_twin.twin           import DigitalTwin
+from routing.router              import find_route, zones_to_sumo_edges
 
-# TODO: import AI models once trained
-
-HEADLESS   = False  # False = GUI mode via run.sh. True = headless for RPi/CI.
+HEADLESS   = True   # True = headless (RPi/CI). False = GUI via ./run.sh
 MAX_STEPS  = None   # None = run indefinitely
-STEP_DELAY = 0.05   # seconds between steps in GUI mode — controls how fast vehicles move visually
+STEP_DELAY = 0.05   # seconds between steps in GUI mode
+
+# Event icons for terminal output
+EVENT_ICON = {
+    "free_flow":  "🟢",
+    "slowdown":   "🟡",
+    "congestion": "🔴",
+    "unknown":    "⚪",
+}
 
 
-def build_zones() -> list[Zone]:
-    # TODO: load zone definitions from zones_config
-    return []
+def build_zones():
+    """
+    Build all 6 RSU zones from zones_config.
+    Must be called AFTER traci.start() — needs live TraCI connection
+    to auto-discover edges and compute junction centroids.
+    Draws initial blue polygon for each zone on the SUMO GUI.
+    """
+    zones = []
+    print("\n📡 Building RSU zones...")
+    for defn in ZONE_DEFINITIONS:
+        zone = build_zone(
+            zone_id     = defn["zone_id"],
+            tl_ids      = defn["tl_ids"],
+            extra_edges = defn.get("extra_edges", []),
+        )
+        print(f"   ✅ {zone.zone_id:<28}  {len(zone.edge_ids):>3} edges  "
+              f"centroid ({zone.cx:>9.1f}, {zone.cy:>9.1f})")
+        zones.append(zone)
+    print(f"📡 {len(zones)} zones ready\n")
+    return zones
+
+
+def _print_step(sim_step: int, vehicles: list, zone_states: list):
+    """Pretty-print vehicle table + zone states every 50 steps."""
+    print(f"\n{'━'*65}")
+    print(f"  Step {sim_step:>5} | Vehicles: {len(vehicles):>3} | Zones: {len(zone_states)}")
+    print(f"{'━'*65}")
+
+    if zone_states:
+        print(f"  {'ZONE':<28} {'VEH':>4}  {'SPD m/s':>7}  STATUS")
+        print(f"  {'-'*28} {'-'*4}  {'-'*7}  {'-'*18}")
+        for zs in zone_states:
+            icon = EVENT_ICON.get(zs.event, "⚪")
+            print(f"  {zs.zone_id:<28} {zs.vehicle_count:>4}  "
+                  f"{zs.avg_speed:>7.2f}  {icon} {zs.event}")
+        print()
+
+    print(f"  {'ID':<8} {'km/h':>6} {'X':>10} {'Y':>10}  {'Edge'}")
+    print(f"  {'-'*8} {'-'*6} {'-'*10} {'-'*10}  {'-'*22}")
+    for v in vehicles[:20]:
+        speed_kmh = round(v["speed"] * 3.6, 1)
+        x, y      = round(v["position"][0], 2), round(v["position"][1], 2)
+        print(f"  {v['id']:<8} {speed_kmh:>6.1f} {x:>10} {y:>10}  {v['edge_id']}")
+    print(flush=True)
 
 
 def run():
     start(HEADLESS)
 
     if not HEADLESS:
-        print()
-        print("━" * 55)
-        print("  GreenSync simulation running")
-        print("  sumo-gui is a VIEWER — Python drives every step.")
+        print("\n" + "━" * 55)
+        print("  GreenSync — SUMO GUI mode")
         print("  ⚠️  Do NOT click Play ▶ in the GUI window.")
-        print("  Vehicles will appear and move automatically.")
-        print("━" * 55)
-        print()
+        print("  Python drives every step via TraCI.")
+        print("  Zone polygons will appear on the map.")
+        print("━" * 55 + "\n")
 
-    mqtt = mqtt_connect()
-    twin = DigitalTwin()
+    # Build zones AFTER start() — needs live TraCI connection
     zones = build_zones()
-
-    # TODO: initialise twin graph from zone adjacency config
-    # TODO: load XGBoost + GRU models
+    mqtt  = mqtt_connect()
+    twin  = DigitalTwin()
 
     sim_step = 0
     try:
         while MAX_STEPS is None or sim_step < MAX_STEPS:
 
-            # Phase 1 — get raw vehicle state
+            # Phase 1 — raw vehicle state from SUMO
             vehicles = step()
-
-            if sim_step % 50 == 0:
-                print(f"\n{'━'*60}")
-                print(f"  Step {sim_step:>5} | Total vehicles: {len(vehicles):>3} | Zones: {len(zones)}")
-                print(f"{'━'*60}")
-                print(f"  {'ID':<8} {'Speed (km/h)':>12} {'X':>10} {'Y':>10}  {'Edge'}")
-                print(f"  {'-'*8} {'-'*12} {'-'*10} {'-'*10}  {'-'*20}")
-                for v in vehicles[:20]:
-                    speed_kmh = round(v['speed'] * 3.6, 1)
-                    x, y      = round(v['position'][0], 2), round(v['position'][1], 2)
-                    print(f"  {v['id']:<8} {speed_kmh:>11.1f}  {x:>10} {y:>10}  {v['edge_id']}")
-                print(flush=True)
-
-            # Slow down the loop in GUI mode so vehicles move visibly
-            if not HEADLESS:
-                time.sleep(STEP_DELAY)
 
             # Phase 2 — RSU zone sensing
             zone_states = sense_all_zones(zones, vehicles)
 
+            # Update zone polygon colours on the GUI
+            for zs, zone in zip(zone_states, zones):
+                update_zone_visual(zone, zs.event)
+
+            # Terminal output every 50 steps
+            if sim_step % 50 == 0:
+                _print_step(sim_step, vehicles, zone_states)
+
+            # GUI pacing
+            if not HEADLESS:
+                time.sleep(STEP_DELAY)
+
             for zs in zone_states:
                 zs_dict = zs.__dict__
 
-                # Phase 3 — publish to MQTT
+                # Phase 3 — MQTT broadcast
                 publish_zone_state(mqtt, zs_dict)
 
-                # Phase 4 — classify event
+                # Phase 4 — event classification
                 event = classify(zs_dict)
 
-                # Phase 5 — update digital twin
+                # Phase 5 — digital twin update
                 twin.update_zone(zs.zone_id, zs_dict)
 
                 # Phase 6 — AI prediction (TODO: wire in GRU)
-                # predicted_speed = gru.predict(...)
-                # twin.update_zone(zs.zone_id, zs_dict, predicted_speed)
-
-                # Phase 7 — propagate if congestion detected
-                # if event.event_type == "congestion":
-                #     propagator.propagate(twin, zs.zone_id, event.event_type)
-
-            # Phase 8 — reroute vehicles (TODO: per-vehicle routing)
-            # for vehicle in vehicles:
-            #     route = find_route(twin, origin_zone, dest_zone)
-            #     sumo_edges = zones_to_sumo_edges(route, zone_edge_map)
-            #     reroute_vehicle(vehicle["id"], sumo_edges)
+                # Phase 7 — event propagation (TODO)
 
             # Phase 3 — publish signal phases
             for tl_id in get_all_traffic_light_ids():
