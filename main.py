@@ -24,7 +24,8 @@ from simulation.traci_interface  import (start, step, get_all_traffic_light_ids,
                                           get_traffic_light_state, reroute_vehicle, stop)
 from rsu.rsu_manager             import build_zone, assign_radii, sense_all_zones
 from rsu.zones_config            import ZONE_DEFINITIONS
-from rsu.edge_detector           import sense_edges, color_edges, reset_edge_colors
+from rsu.edge_detector           import (sense_edges, color_edges, reset_edge_colors,
+                                          prime_edge_cache)
 from communication.publisher     import (connect as mqtt_connect, publish_zone_state,
                                           publish_signal_phase, disconnect as mqtt_disconnect)
 from event_classifier.classifier import classify
@@ -116,14 +117,20 @@ def run():
         print("  GreenSync — SUMO GUI mode")
         print("  ⚠️  Do NOT click Play ▶ in the GUI window.")
         print("  Python drives every step via TraCI.")
-        print("  Road lanes colour green/amber/red by event.")
-        print("  Zone outlines drawn as thin blue circles.")
+        print("  Roads: smooth green→yellow→orange→red gradient (Google Maps style).")
+        print("  Zone outlines: thin blue circles (non-overlapping).")
         print("━" * 58 + "\n")
 
-    zones    = build_zones()
+    zones     = build_zones()
     all_edges = _all_zone_edges(zones)
-    mqtt     = mqtt_connect()
-    twin     = DigitalTwin()
+
+    # Pre-fetch speed limits + lane counts once — used for smooth colour gradient
+    print("🎨 Priming edge colour cache...")
+    prime_edge_cache(all_edges)
+    print(f"   {len(all_edges)} edges cached\n")
+
+    mqtt = mqtt_connect()
+    twin = DigitalTwin()
 
     sim_step = 0
     try:
