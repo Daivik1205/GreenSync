@@ -11,7 +11,7 @@ traci.start(sumoCmd)
 
 step = 0
 
-while step < 200:
+while step < 1000:
     traci.simulationStep()
 
     vehicle_ids = traci.vehicle.getIDList()
