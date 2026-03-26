@@ -24,12 +24,14 @@ from rsu.edge_detector import EdgeState
 
 # ── Zone outline visual settings ─────────────────────────────────────────────
 ZONE_N_POINTS     = 32     # polygon smoothness
-ZONE_RADIUS_FRAC  = 0.40   # fraction of nearest-neighbour distance → radius
-ZONE_RADIUS_MIN   = 80     # metres — never smaller than this
-ZONE_RADIUS_MAX   = 350    # metres — never larger than this
+ZONE_RADIUS_FRAC  = 0.44   # radius = nearest_neighbour_dist × this factor
+                            # factor < 0.5 guarantees r_i + r_j < d(i,j) — no visual overlap
+                            # 0.44 leaves a small gap between adjacent circles (cleaner than touching)
+ZONE_RADIUS_MIN   = 0      # no minimum — let dense clusters be small; prevents clamp-induced overlap
+ZONE_RADIUS_MAX   = 220    # metres — keeps isolated RSUs from drawing giant distracting circles
 
-ZONE_OUTLINE_COLOR = (100, 180, 255, 140)   # light-blue outline
-ZONE_OUTLINE_WIDTH = 1                       # thin stroke (SUMO ignores width for polygons, but kept for clarity)
+ZONE_OUTLINE_COLOR = (80, 160, 255, 180)    # medium-blue outline, slightly more opaque
+ZONE_OUTLINE_WIDTH = 1
 
 
 # ── Data classes ──────────────────────────────────────────────────────────────
@@ -109,8 +111,8 @@ def _compute_radii(zones: list) -> list[float]:
                 continue
             d = math.hypot(z.cx - other.cx, z.cy - other.cy)
             min_dist = min(min_dist, d)
-        r = min_dist * ZONE_RADIUS_FRAC if min_dist < float("inf") else ZONE_RADIUS_MIN
-        radii.append(max(ZONE_RADIUS_MIN, min(ZONE_RADIUS_MAX, r)))
+        r = min_dist * ZONE_RADIUS_FRAC if min_dist < float("inf") else ZONE_RADIUS_MAX
+        radii.append(min(ZONE_RADIUS_MAX, r))   # only cap at max; no floor clamp
     return radii
 
 

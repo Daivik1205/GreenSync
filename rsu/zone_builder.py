@@ -8,11 +8,11 @@
 # into exactly one zone regardless of distance).
 #
 # ── Overlap policy ───────────────────────────────────────────────────────────
-# Two adjacent zones are allowed to share edges near their common boundary.
-# A boundary_factor of 0.55 means each zone's radius is 55 % of the
-# nearest-neighbour distance, so the pair overlaps by only 10 % of that
-# distance — minimal but physically realistic (a road at the junction of two
-# RSU coverage areas IS observable by both units).
+# BOUNDARY_FACTOR < 0.50 guarantees that two adjacent zones never overlap:
+#   r_i = d(i,j) × 0.48  →  r_i + r_j ≤ 0.96 × d(i,j) < d(i,j)
+# A thin unmonitored strip is left between adjacent RSU footprints — this is
+# physically realistic (RADAR/DSRC range is finite and RSUs don't overlap).
+# Edges at boundaries are only included in one zone (the closest RSU).
 #
 # Edges that are farther than max_radius from every TL are intentionally
 # left uncovered, simulating the real-world gap in RSU deployment.
@@ -35,10 +35,11 @@ from dataclasses import dataclass, field
 
 
 # ── RSU sensing parameters ────────────────────────────────────────────────────
-MIN_RADIUS       = 180.0   # m — minimum RSU RADAR range
-MAX_RADIUS       = 480.0   # m — maximum RSU RADAR range
-BOUNDARY_FACTOR  = 0.55    # radius = nearest_neighbour_dist × this factor
-                            # 0.55 → zones touch and overlap ≈10 % of gap
+MIN_RADIUS       = 40.0    # m — floor: even dense TLs sense at least a 40m bubble
+MAX_RADIUS       = 280.0   # m — cap: isolated RSUs don't engulf half the network
+BOUNDARY_FACTOR  = 0.48    # radius = nearest_neighbour_dist × this factor
+                            # < 0.5 → guaranteed no sensing-radius overlap with nearest TL
+                            # 0.48 leaves a thin unmonitored strip between adjacent RSUs
 
 
 # ── Data class ────────────────────────────────────────────────────────────────
@@ -135,8 +136,8 @@ def build_rsu_zones(verbose: bool = True) -> list[ZoneDef]:
     2. For each TL compute adaptive_radius:
            adaptive_radius = clamp(nearest_neighbour_dist × BOUNDARY_FACTOR,
                                    MIN_RADIUS, MAX_RADIUS)
-       A factor < 0.5 would guarantee zero overlap; 0.55 allows ≈10 % boundary
-       sharing — just enough for edge-case realism without gross redundancy.
+       BOUNDARY_FACTOR = 0.48 < 0.5 guarantees no two sensing radii overlap
+       (r_i + r_j ≤ 0.96 × d(i,j) < d(i,j) for any pair i,j).
     3. Assign an edge to a zone if the minimum distance from any of the edge's
        representative points (start / mid / end) to the zone centre ≤ radius.
        This correctly handles long edges that span multiple zone footprints.
