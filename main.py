@@ -181,10 +181,20 @@ def _print_dashboard(sim_step: int, sim_time: float,
         z_spd   = round(zs.avg_speed * 3.6, 1)
         z_edges = len(zs.edge_states)
 
+        # Find worst road in this zone for the header annotation
+        active_in_zone = [s for s in zs.edge_states.values() if s.vehicle_count > 0]
+        worst = max(active_in_zone,
+                    key=lambda s: (_RANK.get(s.event, 0), s.occupancy),
+                    default=None)
+        worst_str = (f"  │  worst: {str(worst.edge_id)[:22]} "
+                     f"{worst.speed_kmh:.1f} km/h {_ICON.get(worst.event,'⚪')}"
+                     if worst else "")
+
         # Zone header line
         print(f"  {z_icon} {zs.zone_id:<10}  "
               f"{z_edges:>3} roads │ {zs.vehicle_count:>3} vehs │ "
-              f"{z_spd:>6.1f} km/h │ {zs.dominant_event.upper()}")
+              f"avg {z_spd:>6.1f} km/h │ {zs.dominant_event.upper()}"
+              f"{worst_str}")
 
         # Roads inside this zone that have vehicles, worst first
         active_road_states = sorted(
@@ -316,12 +326,19 @@ def run():
 
             # ── Phase 3–5: MQTT, classifier, digital twin ──────────────────────
             for zs in zone_states:
+                # Find worst road in zone for enriched MQTT payload
+                active_es = [s for s in zs.edge_states.values() if s.vehicle_count > 0]
+                worst_es  = max(active_es,
+                                key=lambda s: (_RANK.get(s.event, 0), s.occupancy),
+                                default=None)
                 zs_dict = {
-                    "zone_id":       zs.zone_id,
-                    "vehicle_count": zs.vehicle_count,
-                    "avg_speed":     zs.avg_speed,
-                    "event":         zs.dominant_event,
-                    "density":       zs.vehicle_count,
+                    "zone_id":             zs.zone_id,
+                    "vehicle_count":       zs.vehicle_count,
+                    "avg_speed":           zs.avg_speed,
+                    "event":               zs.dominant_event,
+                    "density":             zs.vehicle_count,
+                    "worst_road":          worst_es.edge_id if worst_es else "",
+                    "worst_road_speed_kmh": worst_es.speed_kmh if worst_es else 0.0,
                 }
                 publish_zone_state(mqtt, zs_dict)
                 classify(zs_dict)

@@ -146,7 +146,7 @@ def _render(zones: dict, signals: dict, msg_count: int, last_msg):
 
     # ── ZONE ROUTING TABLE ────────────────────────────────────────────────────
     print(f"\n  ▸ ZONE ROUTING TABLE  ({len(zones)} zones)\n")
-    print(f"  {'Zone':<14} {'Event':<12} {'Vehicles':>8} {'Avg Speed':>10} {'Action'}")
+    print(f"  {'Zone':<14} {'Event':<12} {'Vehs':>5} {'Avg Speed':>10} {'Action'}")
     print("  " + "─" * (W - 2))
 
     sorted_zones = sorted(
@@ -161,15 +161,18 @@ def _render(zones: dict, signals: dict, msg_count: int, last_msg):
         count  = z.get("vehicle_count", 0)
         speed  = z.get("avg_speed", 0.0)
         spd_kh = round(speed * 3.6, 1) if speed else 0.0
+        worst  = z.get("worst_road", "")
+        worst_spd = z.get("worst_road_speed_kmh", "")
+        worst_str = f"  ← {worst} @ {worst_spd} km/h" if worst else ""
 
         action = {
-            "congestion": "⛔  AVOID — reroute around this zone",
-            "slowdown":   "⚠️  CAUTION — expect delays",
-            "free_flow":  "✅  CLEAR — preferred route",
+            "congestion": "⛔  AVOID",
+            "slowdown":   "⚠️  CAUTION",
+            "free_flow":  "✅  CLEAR",
             "unknown":    "   monitoring …",
         }.get(event, "")
 
-        print(f"  {icon} {zone_id:<12}  {event:<12} {count:>7}   {spd_kh:>7.1f} km/h  {action}")
+        print(f"  {icon} {zone_id:<12}  {event:<12} {count:>4}  {spd_kh:>7.1f} km/h  {action}{worst_str}")
 
     # ── ROUTING ADVICE ────────────────────────────────────────────────────────
     print(f"\n  ▸ ROUTING ADVICE  (rule-based — GRU+LSH predictions in Phase 6)\n")
