@@ -35,11 +35,13 @@ from dataclasses import dataclass, field
 
 
 # ── RSU sensing parameters ────────────────────────────────────────────────────
-MIN_RADIUS       = 40.0    # m — floor: even dense TLs sense at least a 40m bubble
-MAX_RADIUS       = 280.0   # m — cap: isolated RSUs don't engulf half the network
-BOUNDARY_FACTOR  = 0.48    # radius = nearest_neighbour_dist × this factor
+MIN_RADIUS       = 30.0    # m — floor: even dense TLs sense at least a 30m bubble
+MAX_RADIUS       = 220.0   # m — cap: isolated RSUs don't engulf half the network
+BOUNDARY_FACTOR  = 0.32    # radius = nearest_neighbour_dist × this factor
                             # < 0.5 → guaranteed no sensing-radius overlap with nearest TL
-                            # 0.48 leaves a thin unmonitored strip between adjacent RSUs
+                            # 0.32 → two adjacent zones cover only 64% of the space
+                            # between them, leaving a clear 36% unmonitored gap.
+                            # Dramatically reduces boundary-shared edges vs 0.48.
 
 
 # ── Data class ────────────────────────────────────────────────────────────────

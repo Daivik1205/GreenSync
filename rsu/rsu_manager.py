@@ -24,11 +24,12 @@ from rsu.edge_detector import EdgeState
 
 # ── Zone outline visual settings ─────────────────────────────────────────────
 ZONE_N_POINTS     = 32     # polygon smoothness
-ZONE_RADIUS_FRAC  = 0.44   # radius = nearest_neighbour_dist × this factor
-                            # factor < 0.5 guarantees r_i + r_j < d(i,j) — no visual overlap
-                            # 0.44 leaves a small gap between adjacent circles (cleaner than touching)
-ZONE_RADIUS_MIN   = 0      # no minimum — let dense clusters be small; prevents clamp-induced overlap
-ZONE_RADIUS_MAX   = 220    # metres — keeps isolated RSUs from drawing giant distracting circles
+ZONE_RADIUS_FRAC  = 0.30   # radius = nearest_neighbour_dist × this factor
+                            # Matches BOUNDARY_FACTOR (0.32) in zone_builder closely so
+                            # the drawn circle represents the actual sensing footprint.
+                            # Two adjacent circles: r_i + r_j = 0.60 × d(i,j) → clear gap.
+ZONE_RADIUS_MIN   = 0      # no minimum — let dense clusters be small
+ZONE_RADIUS_MAX   = 180    # metres — tighter cap keeps circles small and non-distracting
 
 ZONE_OUTLINE_COLOR = (80, 160, 255, 180)    # medium-blue outline, slightly more opaque
 ZONE_OUTLINE_WIDTH = 1

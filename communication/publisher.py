@@ -15,7 +15,10 @@ BROKER_PORT = 1883
 
 
 def connect(host: str = BROKER_HOST, port: int = BROKER_PORT) -> mqtt.Client:
-    client = mqtt.Client(client_id="greensyncq_publisher")
+    client = mqtt.Client(
+        mqtt.CallbackAPIVersion.VERSION2,
+        client_id="greensyncq_publisher",
+    )
     client.connect(host, port)
     client.loop_start()
     return client
