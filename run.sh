@@ -1,39 +1,42 @@
 #!/usr/bin/env bash
-# run.sh — GreenSync launcher
+# run.sh — GreenSync unified launcher
 #
-# Exports X11 env vars so sumo-gui can open via XQuartz,
-# then runs the Python pipeline (which launches sumo-gui internally via traci.start).
+# Starts ONE sumo-gui instance + the Streamlit dashboard in a single process.
+# The Streamlit SimController owns the TraCI connection — no second simulation.
 #
 # Usage:
-#   ./run.sh              → GUI mode  (HEADLESS=False in main.py)
-#   ./run.sh --headless   → headless  (overrides main.py setting)
+#   ./run.sh              → SUMO GUI + Streamlit dashboard (default)
+#   ./run.sh --headless   → headless mode (no sumo-gui window)
 
 set -e
 
 SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
 VENV="$SCRIPT_DIR/venv"
 
-# ── X11 / sumo-gui environment (macOS + XQuartz) ──────────────────────────────
+# ── X11 / sumo-gui environment (macOS + XQuartz) ─────────────────────────────
 export SUMO_HOME="$VENV/lib/python3.12/site-packages/sumo"
 export PROJ_DATA="$SUMO_HOME/data/proj"
 export FONTCONFIG_FILE="/opt/homebrew/etc/fonts/fonts.conf"
 export DISPLAY=":0"
 export XAUTHORITY="$HOME/.Xauthority"
 
-# Allow local processes (including Python subprocesses) to connect to XQuartz.
-# Without this, sumo-gui launched as a Python subprocess is blocked by X11 auth.
+# Ensure project root is on PYTHONPATH so all nav/rsu/simulation imports work
+export PYTHONPATH="$SCRIPT_DIR:${PYTHONPATH:-}"
+
+# Allow Python subprocesses (sumo-gui) to connect to XQuartz
 xhost +local: 2>/dev/null || true
 
 source "$VENV/bin/activate"
 
 if [[ "$1" == "--headless" ]]; then
-    echo "🚀 Running in headless mode..."
-    python -c "
-import main
-main.HEADLESS = True
-main.run()
-"
+    echo "Starting GreenSync in headless mode..."
+    export GREENSYNC_HEADLESS=1
 else
-    echo "🐍 Starting GreenSync..."
-    python main.py
+    echo "Starting GreenSync — SUMO GUI + Streamlit dashboard..."
+    export GREENSYNC_HEADLESS=0
 fi
+
+# Single entry point: Streamlit dashboard drives everything
+streamlit run "$SCRIPT_DIR/nav/navigation_dashboard.py" \
+    --server.headless false \
+    --server.port 8501
