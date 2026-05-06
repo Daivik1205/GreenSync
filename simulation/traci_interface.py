@@ -8,7 +8,7 @@ import os
 import time
 
 SUMO_CFG     = os.path.abspath(os.path.join(os.path.dirname(__file__), "..", "greensync_phase1", "map.sumocfg"))
-GUI_DELAY_MS = 100   # ms per step in GUI — controls how fast vehicles move visually
+GUI_DELAY_MS = 0     # ms per step in GUI — 0 = run as fast as TraCI calls allow
 
 
 def start(headless: bool = True):
