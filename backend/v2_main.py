@@ -17,8 +17,14 @@
 #   GREENSYNC_HEADLESS    — 1 = no SUMO GUI (default 0)
 
 import os
+import sys
 import time
 import logging
+
+# Add the project directory to sys.path so we can import from top level modules
+project_root = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
+if project_root not in sys.path:
+    sys.path.insert(0, project_root)
 
 from simulation.traci_interface  import (start, step, get_all_traffic_light_ids,
                                           get_traffic_light_state, stop)
@@ -47,7 +53,9 @@ STEP_DELAY     = 0.05
 PRINT_INTERVAL = 10
 BROKER_HOST    = os.environ.get("MQTT_BROKER_HOST", "localhost")
 BROKER_PORT    = int(os.environ.get("MQTT_BROKER_PORT", "1883"))
-NET_PATH       = os.environ.get("SUMO_NET_PATH", "greensync_phase1/map.net.xml")
+_HERE    = os.path.dirname(os.path.abspath(__file__))
+NET_PATH = os.environ.get("SUMO_NET_PATH",
+               os.path.join(_HERE, "..", "greensync_phase1", "map.net.xml"))
 
 _RANK = {"congestion": 3, "slowdown": 2, "free_flow": 1, "unknown": 0}
 _W    = 88
