@@ -33,7 +33,7 @@ class MqttIntentService : Service() {
         private const val TAG            = "MqttIntentService"
         private const val CHANNEL_ID     = "greensync_mqtt"
         private const val NOTIF_ID       = 1001
-        private const val BROKER_URI     = "tcp://192.168.1.100:1883"
+        private const val BROKER_URI     = "tcp://10.0.2.2:1883"   // Android emulator → host localhost
         private const val CLIENT_ID_PREFIX = "greensync_android_"
 
         const val ACTION_PUBLISH_INTENT    = "com.greensync.PUBLISH_INTENT"
