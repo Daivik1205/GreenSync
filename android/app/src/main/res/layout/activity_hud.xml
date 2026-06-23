@@ -11,7 +11,7 @@
         android:layout_width="match_parent"
         android:layout_height="wrap_content"
         android:orientation="vertical"
-        android:paddingBottom="24dp">
+        android:paddingBottom="32dp">
 
         <!-- Top bar: back + title -->
         <LinearLayout
@@ -67,10 +67,8 @@
             android:layout_width="match_parent"
             android:layout_height="wrap_content"
             android:orientation="horizontal"
-            android:paddingHorizontal="12dp"
-            android:gravity="center">
+            android:paddingHorizontal="12dp">
 
-            <!-- ETA card -->
             <com.google.android.material.card.MaterialCardView
                 android:layout_width="0dp"
                 android:layout_height="wrap_content"
@@ -79,14 +77,12 @@
                 app:cardBackgroundColor="@color/surface_card"
                 app:cardCornerRadius="12dp"
                 app:cardElevation="4dp">
-
                 <LinearLayout
                     android:layout_width="match_parent"
                     android:layout_height="wrap_content"
                     android:orientation="vertical"
                     android:gravity="center"
-                    android:padding="16dp">
-
+                    android:padding="14dp">
                     <TextView
                         android:layout_width="wrap_content"
                         android:layout_height="wrap_content"
@@ -94,16 +90,14 @@
                         android:textColor="@color/hint_text"
                         android:textSize="10sp"
                         android:letterSpacing="0.1" />
-
                     <TextView
                         android:id="@+id/tv_stat_eta"
                         android:layout_width="wrap_content"
                         android:layout_height="wrap_content"
                         android:textColor="@color/white"
-                        android:textSize="30sp"
+                        android:textSize="28sp"
                         android:textStyle="bold"
-                        android:layout_marginTop="4dp" />
-
+                        android:layout_marginTop="2dp" />
                     <TextView
                         android:layout_width="wrap_content"
                         android:layout_height="wrap_content"
@@ -113,7 +107,6 @@
                 </LinearLayout>
             </com.google.android.material.card.MaterialCardView>
 
-            <!-- Speed card -->
             <com.google.android.material.card.MaterialCardView
                 android:layout_width="0dp"
                 android:layout_height="wrap_content"
@@ -122,14 +115,12 @@
                 app:cardBackgroundColor="@color/surface_card"
                 app:cardCornerRadius="12dp"
                 app:cardElevation="4dp">
-
                 <LinearLayout
                     android:layout_width="match_parent"
                     android:layout_height="wrap_content"
                     android:orientation="vertical"
                     android:gravity="center"
-                    android:padding="16dp">
-
+                    android:padding="14dp">
                     <TextView
                         android:layout_width="wrap_content"
                         android:layout_height="wrap_content"
@@ -137,15 +128,13 @@
                         android:textColor="@color/hint_text"
                         android:textSize="10sp"
                         android:letterSpacing="0.1" />
-
                     <TextView
                         android:id="@+id/tv_stat_speed"
                         android:layout_width="wrap_content"
                         android:layout_height="wrap_content"
-                        android:textSize="30sp"
+                        android:textSize="28sp"
                         android:textStyle="bold"
-                        android:layout_marginTop="4dp" />
-
+                        android:layout_marginTop="2dp" />
                     <TextView
                         android:layout_width="wrap_content"
                         android:layout_height="wrap_content"
@@ -155,7 +144,6 @@
                 </LinearLayout>
             </com.google.android.material.card.MaterialCardView>
 
-            <!-- Distance card -->
             <com.google.android.material.card.MaterialCardView
                 android:layout_width="0dp"
                 android:layout_height="wrap_content"
@@ -164,14 +152,12 @@
                 app:cardBackgroundColor="@color/surface_card"
                 app:cardCornerRadius="12dp"
                 app:cardElevation="4dp">
-
                 <LinearLayout
                     android:layout_width="match_parent"
                     android:layout_height="wrap_content"
                     android:orientation="vertical"
                     android:gravity="center"
-                    android:padding="16dp">
-
+                    android:padding="14dp">
                     <TextView
                         android:layout_width="wrap_content"
                         android:layout_height="wrap_content"
@@ -179,16 +165,14 @@
                         android:textColor="@color/hint_text"
                         android:textSize="10sp"
                         android:letterSpacing="0.1" />
-
                     <TextView
                         android:id="@+id/tv_stat_distance"
                         android:layout_width="wrap_content"
                         android:layout_height="wrap_content"
                         android:textColor="@color/white"
-                        android:textSize="30sp"
+                        android:textSize="28sp"
                         android:textStyle="bold"
-                        android:layout_marginTop="4dp" />
-
+                        android:layout_marginTop="2dp" />
                     <TextView
                         android:layout_width="wrap_content"
                         android:layout_height="wrap_content"
@@ -200,26 +184,100 @@
 
         </LinearLayout>
 
-        <!-- Congestion block -->
+        <!-- V2I Signal countdown card -->
+        <com.google.android.material.card.MaterialCardView
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:layout_marginHorizontal="16dp"
+            android:layout_marginTop="12dp"
+            app:cardBackgroundColor="@color/surface_card"
+            app:cardCornerRadius="12dp"
+            app:cardElevation="4dp">
+
+            <LinearLayout
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:orientation="horizontal"
+                android:gravity="center_vertical"
+                android:padding="14dp">
+
+                <LinearLayout
+                    android:layout_width="0dp"
+                    android:layout_height="wrap_content"
+                    android:layout_weight="1"
+                    android:orientation="vertical">
+
+                    <TextView
+                        android:layout_width="wrap_content"
+                        android:layout_height="wrap_content"
+                        android:text="NEXT SIGNAL AHEAD"
+                        android:textColor="@color/hint_text"
+                        android:textSize="10sp"
+                        android:letterSpacing="0.1" />
+
+                    <TextView
+                        android:id="@+id/tv_signal_phase"
+                        android:layout_width="wrap_content"
+                        android:layout_height="wrap_content"
+                        android:layout_marginTop="4dp"
+                        android:textSize="20sp"
+                        android:textStyle="bold" />
+
+                    <TextView
+                        android:layout_width="wrap_content"
+                        android:layout_height="wrap_content"
+                        android:layout_marginTop="2dp"
+                        android:text="V2I — GreenSync signal sync"
+                        android:textColor="@color/hint_text"
+                        android:textSize="10sp" />
+                </LinearLayout>
+
+                <LinearLayout
+                    android:layout_width="wrap_content"
+                    android:layout_height="wrap_content"
+                    android:orientation="vertical"
+                    android:gravity="center">
+
+                    <TextView
+                        android:id="@+id/tv_signal_countdown"
+                        android:layout_width="wrap_content"
+                        android:layout_height="wrap_content"
+                        android:textColor="@color/white"
+                        android:textSize="36sp"
+                        android:textStyle="bold"
+                        android:gravity="center" />
+
+                    <TextView
+                        android:layout_width="wrap_content"
+                        android:layout_height="wrap_content"
+                        android:text="seconds"
+                        android:textColor="@color/hint_text"
+                        android:textSize="10sp"
+                        android:gravity="center" />
+                </LinearLayout>
+            </LinearLayout>
+        </com.google.android.material.card.MaterialCardView>
+
+        <!-- Congestion + you joined block -->
         <LinearLayout
             android:layout_width="match_parent"
             android:layout_height="wrap_content"
             android:orientation="vertical"
             android:gravity="center"
-            android:paddingVertical="24dp">
+            android:paddingVertical="20dp">
 
             <TextView
                 android:id="@+id/tv_congestion_icon"
                 android:layout_width="wrap_content"
                 android:layout_height="wrap_content"
-                android:textSize="48sp" />
+                android:textSize="44sp" />
 
             <TextView
                 android:id="@+id/tv_congestion_level"
                 android:layout_width="wrap_content"
                 android:layout_height="wrap_content"
                 android:layout_marginTop="4dp"
-                android:textSize="28sp"
+                android:textSize="26sp"
                 android:textStyle="bold" />
 
             <TextView
@@ -234,9 +292,9 @@
                 android:id="@+id/tv_you_joined"
                 android:layout_width="wrap_content"
                 android:layout_height="wrap_content"
-                android:layout_marginTop="12dp"
-                android:paddingHorizontal="16dp"
-                android:paddingVertical="8dp"
+                android:layout_marginTop="10dp"
+                android:paddingHorizontal="14dp"
+                android:paddingVertical="6dp"
                 android:background="#1E1E1E"
                 android:textSize="13sp"
                 android:textColor="@color/secondary_text" />
@@ -259,7 +317,7 @@
             android:textSize="11sp"
             android:letterSpacing="0.12"
             android:paddingHorizontal="16dp"
-            android:layout_marginBottom="12dp" />
+            android:layout_marginBottom="10dp" />
 
         <LinearLayout
             android:layout_width="match_parent"
@@ -268,30 +326,9 @@
             android:gravity="center_vertical"
             android:paddingHorizontal="16dp"
             android:layout_marginBottom="8dp">
-
-            <TextView
-                android:id="@+id/tv_cmp_label_0"
-                android:layout_width="64dp"
-                android:layout_height="wrap_content"
-                android:textColor="@color/secondary_text"
-                android:textSize="12sp" />
-
-            <ProgressBar
-                android:id="@+id/pb_cmp_0"
-                style="@style/Widget.AppCompat.ProgressBar.Horizontal"
-                android:layout_width="0dp"
-                android:layout_height="8dp"
-                android:layout_weight="1"
-                android:layout_marginHorizontal="8dp"
-                android:max="100" />
-
-            <TextView
-                android:id="@+id/tv_cmp_count_0"
-                android:layout_width="90dp"
-                android:layout_height="wrap_content"
-                android:textColor="@color/secondary_text"
-                android:textSize="12sp"
-                android:gravity="end" />
+            <TextView android:id="@+id/tv_cmp_label_0" android:layout_width="64dp" android:layout_height="wrap_content" android:textColor="@color/secondary_text" android:textSize="12sp" />
+            <ProgressBar android:id="@+id/pb_cmp_0" style="@style/Widget.AppCompat.ProgressBar.Horizontal" android:layout_width="0dp" android:layout_height="8dp" android:layout_weight="1" android:layout_marginHorizontal="8dp" android:max="100" />
+            <TextView android:id="@+id/tv_cmp_count_0" android:layout_width="100dp" android:layout_height="wrap_content" android:textColor="@color/secondary_text" android:textSize="11sp" android:gravity="end" />
         </LinearLayout>
 
         <LinearLayout
@@ -301,30 +338,9 @@
             android:gravity="center_vertical"
             android:paddingHorizontal="16dp"
             android:layout_marginBottom="8dp">
-
-            <TextView
-                android:id="@+id/tv_cmp_label_1"
-                android:layout_width="64dp"
-                android:layout_height="wrap_content"
-                android:textColor="@color/secondary_text"
-                android:textSize="12sp" />
-
-            <ProgressBar
-                android:id="@+id/pb_cmp_1"
-                style="@style/Widget.AppCompat.ProgressBar.Horizontal"
-                android:layout_width="0dp"
-                android:layout_height="8dp"
-                android:layout_weight="1"
-                android:layout_marginHorizontal="8dp"
-                android:max="100" />
-
-            <TextView
-                android:id="@+id/tv_cmp_count_1"
-                android:layout_width="90dp"
-                android:layout_height="wrap_content"
-                android:textColor="@color/secondary_text"
-                android:textSize="12sp"
-                android:gravity="end" />
+            <TextView android:id="@+id/tv_cmp_label_1" android:layout_width="64dp" android:layout_height="wrap_content" android:textColor="@color/secondary_text" android:textSize="12sp" />
+            <ProgressBar android:id="@+id/pb_cmp_1" style="@style/Widget.AppCompat.ProgressBar.Horizontal" android:layout_width="0dp" android:layout_height="8dp" android:layout_weight="1" android:layout_marginHorizontal="8dp" android:max="100" />
+            <TextView android:id="@+id/tv_cmp_count_1" android:layout_width="100dp" android:layout_height="wrap_content" android:textColor="@color/secondary_text" android:textSize="11sp" android:gravity="end" />
         </LinearLayout>
 
         <LinearLayout
@@ -333,31 +349,135 @@
             android:orientation="horizontal"
             android:gravity="center_vertical"
             android:paddingHorizontal="16dp"
-            android:layout_marginBottom="8dp">
+            android:layout_marginBottom="16dp">
+            <TextView android:id="@+id/tv_cmp_label_2" android:layout_width="64dp" android:layout_height="wrap_content" android:textColor="@color/secondary_text" android:textSize="12sp" />
+            <ProgressBar android:id="@+id/pb_cmp_2" style="@style/Widget.AppCompat.ProgressBar.Horizontal" android:layout_width="0dp" android:layout_height="8dp" android:layout_weight="1" android:layout_marginHorizontal="8dp" android:max="100" />
+            <TextView android:id="@+id/tv_cmp_count_2" android:layout_width="100dp" android:layout_height="wrap_content" android:textColor="@color/secondary_text" android:textSize="11sp" android:gravity="end" />
+        </LinearLayout>
 
-            <TextView
-                android:id="@+id/tv_cmp_label_2"
-                android:layout_width="64dp"
+        <!-- Divider -->
+        <View
+            android:layout_width="match_parent"
+            android:layout_height="1dp"
+            android:background="#2A2A2A"
+            android:layout_marginHorizontal="16dp"
+            android:layout_marginBottom="16dp" />
+
+        <!-- Community incident report -->
+        <TextView
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:text="HELP OTHERS — HOW'S YOUR ROUTE?"
+            android:textColor="@color/hint_text"
+            android:textSize="11sp"
+            android:letterSpacing="0.12"
+            android:paddingHorizontal="16dp"
+            android:layout_marginBottom="10dp" />
+
+        <!-- Report confirmation (shown after tap) -->
+        <TextView
+            android:id="@+id/tv_report_confirm"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:paddingHorizontal="16dp"
+            android:paddingVertical="10dp"
+            android:textColor="@color/congestion_low"
+            android:textSize="13sp"
+            android:textStyle="bold"
+            android:gravity="center"
+            android:visibility="gone" />
+
+        <!-- Report buttons row 1 -->
+        <LinearLayout
+            android:id="@+id/ll_report_buttons"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:orientation="vertical"
+            android:paddingHorizontal="12dp">
+
+            <LinearLayout
+                android:layout_width="match_parent"
                 android:layout_height="wrap_content"
-                android:textColor="@color/secondary_text"
-                android:textSize="12sp" />
+                android:orientation="horizontal"
+                android:layout_marginBottom="8dp">
 
-            <ProgressBar
-                android:id="@+id/pb_cmp_2"
-                style="@style/Widget.AppCompat.ProgressBar.Horizontal"
-                android:layout_width="0dp"
-                android:layout_height="8dp"
-                android:layout_weight="1"
-                android:layout_marginHorizontal="8dp"
-                android:max="100" />
+                <TextView
+                    android:id="@+id/btn_report_roadwork"
+                    android:layout_width="0dp"
+                    android:layout_height="wrap_content"
+                    android:layout_weight="1"
+                    android:layout_marginEnd="6dp"
+                    android:text="🚧  Road Work"
+                    android:textColor="@color/secondary_text"
+                    android:textSize="12sp"
+                    android:gravity="center"
+                    android:paddingVertical="10dp"
+                    android:background="@drawable/badge_rounded"
+                    android:backgroundTint="@color/surface_card" />
 
-            <TextView
-                android:id="@+id/tv_cmp_count_2"
-                android:layout_width="90dp"
+                <TextView
+                    android:id="@+id/btn_report_accident"
+                    android:layout_width="0dp"
+                    android:layout_height="wrap_content"
+                    android:layout_weight="1"
+                    android:layout_marginHorizontal="3dp"
+                    android:text="🚨  Accident"
+                    android:textColor="@color/secondary_text"
+                    android:textSize="12sp"
+                    android:gravity="center"
+                    android:paddingVertical="10dp"
+                    android:background="@drawable/badge_rounded"
+                    android:backgroundTint="@color/surface_card" />
+
+                <TextView
+                    android:id="@+id/btn_report_police"
+                    android:layout_width="0dp"
+                    android:layout_height="wrap_content"
+                    android:layout_weight="1"
+                    android:layout_marginStart="6dp"
+                    android:text="👮  Police"
+                    android:textColor="@color/secondary_text"
+                    android:textSize="12sp"
+                    android:gravity="center"
+                    android:paddingVertical="10dp"
+                    android:background="@drawable/badge_rounded"
+                    android:backgroundTint="@color/surface_card" />
+            </LinearLayout>
+
+            <LinearLayout
+                android:layout_width="match_parent"
                 android:layout_height="wrap_content"
-                android:textColor="@color/secondary_text"
-                android:textSize="12sp"
-                android:gravity="end" />
+                android:orientation="horizontal">
+
+                <TextView
+                    android:id="@+id/btn_report_flooding"
+                    android:layout_width="0dp"
+                    android:layout_height="wrap_content"
+                    android:layout_weight="1"
+                    android:layout_marginEnd="6dp"
+                    android:text="🌊  Flooding"
+                    android:textColor="@color/secondary_text"
+                    android:textSize="12sp"
+                    android:gravity="center"
+                    android:paddingVertical="10dp"
+                    android:background="@drawable/badge_rounded"
+                    android:backgroundTint="@color/surface_card" />
+
+                <TextView
+                    android:id="@+id/btn_report_clear"
+                    android:layout_width="0dp"
+                    android:layout_height="wrap_content"
+                    android:layout_weight="1"
+                    android:layout_marginStart="6dp"
+                    android:text="✅  All Clear"
+                    android:textColor="@color/congestion_low"
+                    android:textSize="12sp"
+                    android:textStyle="bold"
+                    android:gravity="center"
+                    android:paddingVertical="10dp"
+                    android:background="@drawable/badge_rounded"
+                    android:backgroundTint="@color/congestion_low_bg" />
+            </LinearLayout>
         </LinearLayout>
 
     </LinearLayout>

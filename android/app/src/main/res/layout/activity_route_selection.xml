@@ -80,6 +80,45 @@
             </LinearLayout>
         </LinearLayout>
 
+        <!-- Live community alert ticker -->
+        <LinearLayout
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:orientation="horizontal"
+            android:gravity="center_vertical"
+            android:paddingStart="12dp"
+            android:paddingEnd="0dp"
+            android:paddingVertical="6dp"
+            android:background="#0D0D0D">
+
+            <TextView
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:text="LIVE"
+                android:textColor="#43A047"
+                android:textSize="9sp"
+                android:textStyle="bold"
+                android:letterSpacing="0.1"
+                android:paddingHorizontal="5dp"
+                android:paddingVertical="2dp"
+                android:background="#1A2E1A"
+                android:layout_marginEnd="8dp" />
+
+            <TextView
+                android:id="@+id/tv_ticker"
+                android:layout_width="0dp"
+                android:layout_height="wrap_content"
+                android:layout_weight="1"
+                android:singleLine="true"
+                android:ellipsize="marquee"
+                android:marqueeRepeatLimit="marquee_forever"
+                android:focusable="true"
+                android:scrollHorizontally="true"
+                android:textColor="@color/secondary_text"
+                android:textSize="11sp"
+                android:paddingEnd="16dp" />
+        </LinearLayout>
+
         <androidx.recyclerview.widget.RecyclerView
             android:id="@+id/rv_routes"
             android:layout_width="match_parent"
