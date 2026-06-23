@@ -61,10 +61,6 @@
         <!-- Paho MQTT Android service -->
         <service android:name="org.eclipse.paho.android.service.MqttService" />
 
-        <meta-data
-            android:name="com.google.android.geo.API_KEY"
-            android:value="${MAPS_API_KEY}" />
-
         <!-- Car App API level declaration -->
         <meta-data
             android:name="androidx.car.app.minCarApiLevel"

@@ -14,7 +14,6 @@ android {
         versionCode    = 2
         versionName    = "2.0.0"
 
-        manifestPlaceholders["MAPS_API_KEY"] = "YOUR_KEY_HERE"
     }
 
     // Required for EcuTelemetryService to access vehicle data on AAOS
@@ -38,8 +37,7 @@ dependencies {
     implementation("androidx.car.app:app:1.4.0")
     implementation("androidx.car.app:app-automotive:1.4.0")
 
-    implementation("com.google.android.gms:play-services-maps:18.2.0")
-    implementation("com.google.android.gms:play-services-location:21.2.0")
+    implementation("org.osmdroid:osmdroid-android:6.1.18")
 
     implementation("org.eclipse.paho:org.eclipse.paho.client.mqttv3:1.2.5")
     implementation("org.eclipse.paho:org.eclipse.paho.android.service:1.1.1")

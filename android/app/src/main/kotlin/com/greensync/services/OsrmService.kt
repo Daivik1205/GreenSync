@@ -1,7 +1,7 @@
 package com.greensync.services
 
-import com.google.android.gms.maps.model.LatLng
 import com.google.gson.Gson
+import com.greensync.models.LatLng
 import com.google.gson.annotations.SerializedName
 import com.greensync.models.Route
 import kotlinx.coroutines.Dispatchers

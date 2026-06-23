@@ -1,7 +1,5 @@
 package com.greensync.models
 
-import com.google.android.gms.maps.model.LatLng
-
 data class Route(
     val id:           String,            // "route_alternative_0/1/2"
     val waypoints:    List<LatLng>,

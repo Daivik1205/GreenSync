@@ -1,84 +1,76 @@
 package com.greensync.screens
 
 import android.os.Bundle
+import android.view.LayoutInflater
 import android.view.View
+import android.view.ViewGroup
+import android.widget.TextView
 import android.widget.Toast
 import androidx.activity.viewModels
 import androidx.appcompat.app.AppCompatActivity
 import androidx.lifecycle.lifecycleScope
+import androidx.recyclerview.widget.DividerItemDecoration
 import androidx.recyclerview.widget.LinearLayoutManager
 import androidx.recyclerview.widget.RecyclerView
-import androidx.recyclerview.widget.DividerItemDecoration
-import android.view.LayoutInflater
-import android.view.ViewGroup
-import android.widget.TextView
-import com.google.android.gms.maps.CameraUpdateFactory
-import com.google.android.gms.maps.GoogleMap
-import com.google.android.gms.maps.OnMapReadyCallback
-import com.google.android.gms.maps.SupportMapFragment
-import com.google.android.gms.maps.model.LatLng
-import com.google.android.gms.maps.model.LatLngBounds
-import com.google.android.gms.maps.model.PolylineOptions
 import com.greensync.R
+import com.greensync.models.LatLng
 import com.greensync.models.Route
 import com.greensync.viewmodels.RouteUiState
 import com.greensync.viewmodels.RouteViewModel
 import kotlinx.coroutines.flow.collectLatest
 import kotlinx.coroutines.launch
+import org.osmdroid.config.Configuration
+import org.osmdroid.tileprovider.tilesource.TileSourceFactory
+import org.osmdroid.util.BoundingBox
+import org.osmdroid.util.GeoPoint
+import org.osmdroid.views.MapView
+import org.osmdroid.views.overlay.Polyline
 
-/**
- * Full-screen route selection screen (phone UI).
- *
- * Shows a Google Map with 3 coloured polylines (OSRM alternatives) and
- * a bottom RecyclerView with route cards. Tapping a card:
- *   1. Highlights that route on the map.
- *   2. Calls RouteViewModel.selectRoute() → publishes MQTT intent.
- *   3. Opens HUDActivity with the selected route.
- *
- * The Android Auto equivalent is RouteSelectionCarScreen.kt.
- */
-class RouteSelectionActivity : AppCompatActivity(), OnMapReadyCallback {
+class RouteSelectionActivity : AppCompatActivity() {
 
-    // Hardcoded demo: Yelahanka → Mysore Road (Bengaluru corridor)
     private val ORIGIN      = LatLng(13.1007, 77.5963)
     private val DESTINATION = LatLng(12.9121, 77.5590)
 
     private val ROUTE_COLORS = intArrayOf(
-        0xFF1A73E8.toInt(),   // blue   — route 0
-        0xFF34A853.toInt(),   // green  — route 1
-        0xFFFBBC04.toInt(),   // yellow — route 2
+        0xFF1A73E8.toInt(),
+        0xFF34A853.toInt(),
+        0xFFFBBC04.toInt(),
     )
 
     private val viewModel: RouteViewModel by viewModels()
-    private var googleMap: GoogleMap? = null
+    private lateinit var mapView: MapView
     private lateinit var adapter: RouteAdapter
 
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
+        Configuration.getInstance().userAgentValue = packageName
         setContentView(R.layout.activity_route_selection)
 
-        val mapFragment = supportFragmentManager
-            .findFragmentById(R.id.map_fragment) as SupportMapFragment
-        mapFragment.getMapAsync(this)
+        mapView = findViewById(R.id.map_view)
+        mapView.setTileSource(TileSourceFactory.MAPNIK)
+        mapView.setMultiTouchControls(true)
+        mapView.controller.setZoom(11.0)
+        mapView.controller.setCenter(GeoPoint(ORIGIN.latitude, ORIGIN.longitude))
 
-        adapter = RouteAdapter(emptyList()) { route ->
-            onRouteSelected(route)
-        }
+        adapter = RouteAdapter(emptyList()) { route -> onRouteSelected(route) }
         val rv = findViewById<RecyclerView>(R.id.rv_routes)
         rv.layoutManager = LinearLayoutManager(this)
         rv.addItemDecoration(DividerItemDecoration(this, DividerItemDecoration.VERTICAL))
         rv.adapter = adapter
 
         observeViewModel()
-    }
-
-    override fun onMapReady(map: GoogleMap) {
-        googleMap = map
-        map.moveCamera(CameraUpdateFactory.newLatLngZoom(ORIGIN, 11f))
         viewModel.fetchRoutes(ORIGIN, DESTINATION)
     }
 
-    // ── Observation ───────────────────────────────────────────────────────────
+    override fun onResume() {
+        super.onResume()
+        mapView.onResume()
+    }
+
+    override fun onPause() {
+        super.onPause()
+        mapView.onPause()
+    }
 
     private fun observeViewModel() {
         lifecycleScope.launch {
@@ -100,32 +92,34 @@ class RouteSelectionActivity : AppCompatActivity(), OnMapReadyCallback {
         }
     }
 
-    // ── Map drawing ───────────────────────────────────────────────────────────
-
     private fun drawRoutes(routes: List<Route>) {
-        val map = googleMap ?: return
-        map.clear()
-        val boundsBuilder = LatLngBounds.Builder()
+        mapView.overlays.clear()
+        var minLat = Double.MAX_VALUE; var maxLat = -Double.MAX_VALUE
+        var minLon = Double.MAX_VALUE; var maxLon = -Double.MAX_VALUE
 
         routes.forEachIndexed { i, route ->
             val color = ROUTE_COLORS.getOrElse(i) { 0xFF888888.toInt() }
             val width = if (i == 0) 12f else 8f
-            map.addPolyline(
-                PolylineOptions()
-                    .addAll(route.geometry)
-                    .color(color)
-                    .width(width)
-                    .zIndex(if (i == 0) 2f else 1f)
-            )
-            route.geometry.forEach { boundsBuilder.include(it) }
+            val polyline = Polyline().apply {
+                setPoints(route.geometry.map { GeoPoint(it.latitude, it.longitude) })
+                outlinePaint.color = color
+                outlinePaint.strokeWidth = width
+            }
+            mapView.overlays.add(polyline)
+            route.geometry.forEach { pt ->
+                if (pt.latitude  < minLat) minLat = pt.latitude
+                if (pt.latitude  > maxLat) maxLat = pt.latitude
+                if (pt.longitude < minLon) minLon = pt.longitude
+                if (pt.longitude > maxLon) maxLon = pt.longitude
+            }
         }
 
-        try {
-            map.animateCamera(CameraUpdateFactory.newLatLngBounds(boundsBuilder.build(), 80))
-        } catch (e: Exception) { /* bounds invalid on tiny screens */ }
+        if (minLat < Double.MAX_VALUE) {
+            val box = BoundingBox(maxLat, maxLon, minLat, minLon)
+            mapView.post { mapView.zoomToBoundingBox(box, true, 80) }
+        }
+        mapView.invalidate()
     }
-
-    // ── Selection ─────────────────────────────────────────────────────────────
 
     private fun onRouteSelected(route: Route) {
         viewModel.selectRoute(route)
@@ -133,10 +127,9 @@ class RouteSelectionActivity : AppCompatActivity(), OnMapReadyCallback {
     }
 
     private fun showLoading(show: Boolean) {
-        findViewById<View>(R.id.progress_bar)?.visibility = if (show) View.VISIBLE else View.GONE
+        findViewById<View>(R.id.progress_bar)?.visibility =
+            if (show) View.VISIBLE else View.GONE
     }
-
-    // ── Adapter ───────────────────────────────────────────────────────────────
 
     private class RouteAdapter(
         private var routes: List<Route>,
