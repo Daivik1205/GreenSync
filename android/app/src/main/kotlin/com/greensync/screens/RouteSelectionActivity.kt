@@ -1,5 +1,6 @@
 package com.greensync.screens
 
+import android.content.Context
 import android.content.res.ColorStateList
 import android.graphics.Color
 import android.os.Bundle
@@ -16,6 +17,7 @@ import androidx.appcompat.app.AppCompatActivity
 import androidx.lifecycle.lifecycleScope
 import androidx.recyclerview.widget.LinearLayoutManager
 import androidx.recyclerview.widget.RecyclerView
+import com.google.android.material.bottomsheet.BottomSheetDialog
 import com.greensync.R
 import com.greensync.models.LatLng
 import com.greensync.models.Route
@@ -35,14 +37,19 @@ import org.osmdroid.util.BoundingBox
 import org.osmdroid.util.GeoPoint
 import org.osmdroid.views.MapView
 import org.osmdroid.views.overlay.Polyline
+import kotlin.math.roundToInt
 import kotlin.random.Random
 
 class RouteSelectionActivity : AppCompatActivity() {
 
+    enum class Mode { BALANCED, FASTEST, GREENEST, SMOOTHEST }
+
     companion object {
-        // Yelahanka fallback used when no GPS fix is available
         val ORIGIN = LatLng(13.1007, 77.5963)
         val MOCK_USER_COUNTS = intArrayOf(312, 89, 641)
+
+        private const val PREFS       = "greensync_prefs"
+        private const val KEY_POINTS  = "green_points"
 
         private val TICKER_ALERTS = listOf(
             "⚠️  Priya reported minor accident near Hebbal overpass",
@@ -63,9 +70,9 @@ class RouteSelectionActivity : AppCompatActivity() {
         }
 
         fun congestionColor(count: Int) = when {
-            count > 500 -> Color.parseColor("#E53935")
-            count > 150 -> Color.parseColor("#FB8C00")
-            else        -> Color.parseColor("#43A047")
+            count > 500 -> Color.parseColor("#FF5247")
+            count > 150 -> Color.parseColor("#FFB300")
+            else        -> Color.parseColor("#2DE371")
         }
 
         fun congestionIcon(count: Int) = when {
@@ -91,32 +98,48 @@ class RouteSelectionActivity : AppCompatActivity() {
             else        -> 45
         }
 
-        // grams CO₂ per km at this congestion level
         private fun co2PerKm(count: Int) = when {
             count > 500 -> 180
             count > 150 -> 130
             else        -> 90
         }
 
-        fun ecoLabel(distKm: Double, count: Int, counts: IntArray): String? {
-            val thisCo2  = co2PerKm(count) * distKm
-            val worstCo2 = counts.maxOf { co2PerKm(it) } * distKm
-            val savedKg  = (worstCo2 - thisCo2) / 1000.0
-            return if (savedKg > 0.05) "🍃  Saves ~%.1f kg CO₂ vs worst route".format(savedKg) else null
+        fun co2Grams(distKm: Double, count: Int) = co2PerKm(count) * distKm
+
+        fun ecoSavedKg(distKm: Double, count: Int, counts: IntArray): Double {
+            val worst = counts.maxOf { co2PerKm(it) } * distKm
+            return (worst - co2Grams(distKm, count)) / 1000.0
+        }
+
+        /** Total signals along a route + how many GreenSync has synced into a green wave. */
+        fun signals(distKm: Double, count: Int): Pair<Int, Int> {
+            val total = (distKm / 2.0).roundToInt().coerceIn(4, 9)
+            val frac  = when { count > 500 -> 0.30; count > 150 -> 0.60; else -> 0.90 }
+            val synced = (total * frac).roundToInt().coerceIn(1, total)
+            return synced to total
+        }
+
+        /** Reward for taking a route that helps balance the network — clearer = more. */
+        fun greenPoints(count: Int, counts: IntArray): Int {
+            val maxC = counts.max()
+            return 5 + ((maxC - count) / 18)
         }
     }
 
     private val viewModel: RouteViewModel by viewModels()
     private lateinit var mapView: MapView
     private lateinit var adapter: RouteAdapter
-    private var currentRoutes: List<Route> = emptyList()
 
     private lateinit var destName: String
     private lateinit var destination: LatLng
     private lateinit var origin: LatLng
     private lateinit var originName: String
 
-    // Live crowd simulation
+    private lateinit var prefs: android.content.SharedPreferences
+    private var mode = Mode.BALANCED
+    private var currentRoutes: List<Route> = emptyList()
+    private var networkOptimal = 73
+
     private val liveCounts = MOCK_USER_COUNTS.copyOf()
     private val liveHandler = Handler(Looper.getMainLooper())
     private var tickerAlertIdx = 0
@@ -125,9 +148,9 @@ class RouteSelectionActivity : AppCompatActivity() {
             for (i in liveCounts.indices) {
                 liveCounts[i] = (liveCounts[i] + Random.nextInt(-8, 9)).coerceAtLeast(10)
             }
+            networkOptimal = (networkOptimal + Random.nextInt(-2, 3)).coerceIn(64, 88)
             adapter.notifyDataSetChanged()
-            val totalUsers = liveCounts.sum()
-            findViewById<TextView>(R.id.tv_total_users).text = "$totalUsers users tracked"
+            updateMeta()
             updateTicker()
             liveHandler.postDelayed(this, 7000)
         }
@@ -138,6 +161,8 @@ class RouteSelectionActivity : AppCompatActivity() {
         Configuration.getInstance().userAgentValue = packageName
         setContentView(R.layout.activity_route_selection)
 
+        prefs = getSharedPreferences(PREFS, Context.MODE_PRIVATE)
+
         destName   = intent.getStringExtra(EXTRA_DEST_NAME)   ?: "Destination"
         originName = intent.getStringExtra(EXTRA_ORIGIN_NAME) ?: "Yelahanka"
         val destLat   = intent.getDoubleExtra(EXTRA_DEST_LAT,   12.9121)
@@ -147,7 +172,7 @@ class RouteSelectionActivity : AppCompatActivity() {
         destination   = LatLng(destLat, destLng)
         origin        = LatLng(originLat, originLng)
 
-        findViewById<TextView>(R.id.tv_route_header).text = "$originName  →  $destName"
+        findViewById<TextView>(R.id.tv_route_header).text = "$originName → $destName"
 
         mapView = findViewById(R.id.map_view)
         mapView.setTileSource(TileSourceFactory.MAPNIK)
@@ -155,20 +180,18 @@ class RouteSelectionActivity : AppCompatActivity() {
         mapView.controller.setZoom(11.0)
         mapView.controller.setCenter(GeoPoint(origin.latitude, origin.longitude))
 
-        findViewById<TextView>(R.id.tv_total_users).text = "${liveCounts.sum()} users tracked"
-
-        // Ticker — needs isSelected=true to run marquee
         val ticker = findViewById<TextView>(R.id.tv_ticker)
         ticker.isSelected = true
         updateTicker()
 
-        adapter = RouteAdapter(emptyList(), liveCounts) { route, index ->
-            onRouteSelected(route, index)
+        adapter = RouteAdapter(emptyList(), liveCounts) { card -> showCommitSheet(card) }
+        findViewById<RecyclerView>(R.id.rv_routes).apply {
+            layoutManager = LinearLayoutManager(this@RouteSelectionActivity)
+            adapter = this@RouteSelectionActivity.adapter
         }
-        val rv = findViewById<RecyclerView>(R.id.rv_routes)
-        rv.layoutManager = LinearLayoutManager(this)
-        rv.adapter = adapter
 
+        setupModeChips()
+        updateMeta()
         observeViewModel()
         viewModel.fetchRoutes(origin, destination)
     }
@@ -176,6 +199,7 @@ class RouteSelectionActivity : AppCompatActivity() {
     override fun onResume() {
         super.onResume()
         mapView.onResume()
+        renderPoints()
         liveHandler.postDelayed(liveRunnable, 7000)
     }
 
@@ -185,12 +209,84 @@ class RouteSelectionActivity : AppCompatActivity() {
         liveHandler.removeCallbacks(liveRunnable)
     }
 
+    // ── Header meta ─────────────────────────────────────────────────────────
+
+    private fun renderPoints() {
+        val pts = prefs.getInt(KEY_POINTS, 1180)
+        findViewById<TextView>(R.id.tv_green_points).text = "⬢ %,d".format(pts)
+    }
+
+    private fun updateMeta() {
+        findViewById<TextView>(R.id.tv_network_status).text =
+            "◇ NETWORK $networkOptimal% OPTIMAL · ${liveCounts.size} routes balanced"
+        findViewById<TextView>(R.id.tv_total_users).text =
+            "%,d commuters live on these routes".format(liveCounts.sum())
+        renderPoints()
+    }
+
+    // ── Mode chips ──────────────────────────────────────────────────────────
+
+    private fun setupModeChips() {
+        val chips = mapOf(
+            Mode.BALANCED  to R.id.chip_balanced,
+            Mode.FASTEST   to R.id.chip_fastest,
+            Mode.GREENEST  to R.id.chip_greenest,
+            Mode.SMOOTHEST to R.id.chip_smoothest,
+        )
+        chips.forEach { (m, id) ->
+            findViewById<TextView>(id).setOnClickListener {
+                mode = m
+                styleChips(chips)
+                applyMode()
+            }
+        }
+        styleChips(chips)
+    }
+
+    private fun styleChips(chips: Map<Mode, Int>) {
+        chips.forEach { (m, id) ->
+            val selected = m == mode
+            val chip = findViewById<TextView>(id)
+            chip.backgroundTintList = ColorStateList.valueOf(
+                Color.parseColor(if (selected) "#13301E" else "#1B241D"))
+            chip.setTextColor(Color.parseColor(if (selected) "#2DE371" else "#8B978C"))
+        }
+    }
+
+    private fun rankedCards(): List<RouteCard> {
+        val indices = currentRoutes.indices.toList()
+        val sorted = when (mode) {
+            Mode.FASTEST -> indices.sortedBy {
+                adjustedEta(currentRoutes[it].durationMin, liveCounts.getOrElse(it){100})
+            }
+            Mode.GREENEST -> indices.sortedBy {
+                co2Grams(currentRoutes[it].distanceKm, liveCounts.getOrElse(it){100})
+            }
+            Mode.SMOOTHEST -> indices.sortedByDescending {
+                signals(currentRoutes[it].distanceKm, liveCounts.getOrElse(it){100}).first
+            }
+            Mode.BALANCED -> indices.sortedBy {
+                val c = liveCounts.getOrElse(it){100}
+                val r = currentRoutes[it]
+                val (synced, total) = signals(r.distanceKm, c)
+                adjustedEta(r.durationMin, c) + c * 0.04 + (total - synced) * 1.5
+            }
+        }
+        return sorted.map { RouteCard(currentRoutes[it], it + 1) }
+    }
+
+    private fun applyMode() {
+        if (currentRoutes.isNotEmpty()) adapter.submit(rankedCards(), mode)
+    }
+
+    // ── Live ticker ─────────────────────────────────────────────────────────
+
     private fun updateTicker() {
-        val msg = TICKER_ALERTS[tickerAlertIdx % TICKER_ALERTS.size]
+        val a = TICKER_ALERTS[tickerAlertIdx % TICKER_ALERTS.size]
         tickerAlertIdx++
-        val next = TICKER_ALERTS[tickerAlertIdx % TICKER_ALERTS.size]
-        val ticker = findViewById<TextView>(R.id.tv_ticker)
-        ticker.text = "$msg        ·        $next        ·        ${TICKER_ALERTS[(tickerAlertIdx + 1) % TICKER_ALERTS.size]}"
+        val b = TICKER_ALERTS[tickerAlertIdx % TICKER_ALERTS.size]
+        val c = TICKER_ALERTS[(tickerAlertIdx + 1) % TICKER_ALERTS.size]
+        findViewById<TextView>(R.id.tv_ticker).text = "$a        ·        $b        ·        $c"
     }
 
     private fun observeViewModel() {
@@ -202,7 +298,7 @@ class RouteSelectionActivity : AppCompatActivity() {
                         showLoading(false)
                         currentRoutes = state.routes
                         drawRoutes(state.routes)
-                        adapter.updateRoutes(state.routes)
+                        applyMode()
                     }
                     is RouteUiState.Error -> {
                         showLoading(false)
@@ -227,13 +323,12 @@ class RouteSelectionActivity : AppCompatActivity() {
                 count > 150 -> 10f
                 else        -> 6f
             }
-            val polyline = Polyline().apply {
+            mapView.overlays.add(Polyline().apply {
                 setPoints(route.geometry.map { GeoPoint(it.latitude, it.longitude) })
                 outlinePaint.color = color
                 outlinePaint.strokeWidth = width
                 outlinePaint.alpha = 200
-            }
-            mapView.overlays.add(polyline)
+            })
             route.geometry.forEach { pt ->
                 if (pt.latitude  < minLat) minLat = pt.latitude
                 if (pt.latitude  > maxLat) maxLat = pt.latitude
@@ -241,7 +336,6 @@ class RouteSelectionActivity : AppCompatActivity() {
                 if (pt.longitude > maxLon) maxLon = pt.longitude
             }
         }
-
         if (minLat < Double.MAX_VALUE) {
             val box = BoundingBox(maxLat, maxLon, minLat, minLon)
             mapView.post { mapView.zoomToBoundingBox(box, true, 80) }
@@ -249,24 +343,77 @@ class RouteSelectionActivity : AppCompatActivity() {
         mapView.invalidate()
     }
 
-    private fun onRouteSelected(route: Route, index: Int) {
-        val userCount = liveCounts.getOrElse(index) { 100 }
-        val eta       = adjustedEta(route.durationMin, userCount)
-        val speed     = expectedSpeed(userCount)
-        viewModel.selectRoute(route)
+    // ── Commit-intent bottom sheet ──────────────────────────────────────────
+
+    private fun showCommitSheet(card: RouteCard) {
+        val idx   = card.routeNo - 1
+        val route = card.route
+        val count = liveCounts.getOrElse(idx) { 100 }
+        val eta   = adjustedEta(route.durationMin, count)
+        val speed = expectedSpeed(count)
+        val (synced, total) = signals(route.distanceKm, count)
+        val savedKg = ecoSavedKg(route.distanceKm, count, liveCounts)
+        val pts     = greenPoints(count, liveCounts)
+
+        val sheet = BottomSheetDialog(this)
+        val v = layoutInflater.inflate(R.layout.sheet_commit, null)
+        sheet.setContentView(v)
+
+        v.findViewById<TextView>(R.id.tv_sheet_title).text =
+            "Route ${card.routeNo} · ${route.summary.ifBlank { "via city roads" }}"
+        v.findViewById<TextView>(R.id.tv_sheet_eta).text =
+            "~$eta min  ·  ~$speed km/h  ·  %.1f km".format(route.distanceKm)
+        v.findViewById<TextView>(R.id.tv_impact_help).text =
+            "📡  Your intent helps $count commuters behind you reroute smarter"
+        v.findViewById<TextView>(R.id.tv_impact_signals).text =
+            "🚦  $synced/$total signals will green-wave to your arrival"
+
+        val ecoView = v.findViewById<TextView>(R.id.tv_impact_eco)
+        ecoView.text = if (savedKg > 0.05)
+            "🍃  Saves ~%.1f kg CO₂ vs the busiest route".format(savedKg)
+        else
+            "🍃  Standard emissions on this corridor"
+
+        val bal = prefs.getInt(KEY_POINTS, 1180)
+        v.findViewById<TextView>(R.id.tv_reward_line).text =
+            "Earns +$pts GreenPoints · balance becomes %,d".format(bal + pts)
+
+        val broadcasting = v.findViewById<TextView>(R.id.tv_broadcasting)
+        val btn = v.findViewById<TextView>(R.id.btn_commit)
+        btn.setOnClickListener {
+            btn.isEnabled = false
+            btn.alpha = 0.5f
+            broadcasting.visibility = View.VISIBLE
+            broadcasting.text = "📡 Broadcasting intent to $count commuters…"
+            // Award points
+            prefs.edit().putInt(KEY_POINTS, bal + pts).apply()
+            Handler(Looper.getMainLooper()).postDelayed({
+                broadcasting.text = "✓ Intent committed — network rebalancing"
+                Handler(Looper.getMainLooper()).postDelayed({
+                    sheet.dismiss()
+                    launchHud(card, eta, speed)
+                }, 700)
+            }, 1300)
+        }
+        sheet.show()
+    }
+
+    private fun launchHud(card: RouteCard, eta: Int, speed: Int) {
+        val idx = card.routeNo - 1
+        viewModel.selectRoute(card.route)
         startActivity(
             HUDActivity.newIntent(
                 context     = this,
-                routeId     = route.id,
-                summary     = route.summary,
-                selectedIdx = index,
-                userCount   = userCount,
+                routeId     = card.route.id,
+                summary     = card.route.summary,
+                selectedIdx = idx,
+                userCount   = liveCounts.getOrElse(idx) { 100 },
                 allCounts   = liveCounts,
                 destName    = destName,
                 originName  = originName,
                 adjustedEta = eta,
                 speed       = speed,
-                distanceKm  = route.distanceKm,
+                distanceKm  = card.route.distanceKm,
             )
         )
     }
@@ -276,66 +423,95 @@ class RouteSelectionActivity : AppCompatActivity() {
             if (show) View.VISIBLE else View.GONE
     }
 
+    // ── Adapter ─────────────────────────────────────────────────────────────
+
+    data class RouteCard(val route: Route, val routeNo: Int)
+
     private class RouteAdapter(
-        private var routes: List<Route>,
+        private var cards: List<RouteCard>,
         private val liveCounts: IntArray,
-        private val onClick: (Route, Int) -> Unit,
+        private val onSelect: (RouteCard) -> Unit,
     ) : RecyclerView.Adapter<RouteAdapter.VH>() {
 
+        private var mode = Mode.BALANCED
+
         inner class VH(view: View) : RecyclerView.ViewHolder(view) {
-            val strip:       View        = view.findViewById(R.id.congestion_strip)
-            val tvLabel:     TextView    = view.findViewById(R.id.tv_route_label)
-            val tvBadge:     TextView    = view.findViewById(R.id.tv_congestion_badge)
-            val tvRecommend: TextView    = view.findViewById(R.id.tv_recommended)
-            val tvEta:       TextView    = view.findViewById(R.id.tv_eta)
-            val tvSpeed:     TextView    = view.findViewById(R.id.tv_speed)
-            val tvDetails:   TextView    = view.findViewById(R.id.tv_details)
-            val tvSummary:   TextView    = view.findViewById(R.id.tv_summary)
-            val tvEco:       TextView    = view.findViewById(R.id.tv_eco)
-            val tvUsers:     TextView    = view.findViewById(R.id.tv_user_count)
-            val pbBar:       ProgressBar = view.findViewById(R.id.pb_congestion)
+            val strip:   View        = view.findViewById(R.id.congestion_strip)
+            val label:   TextView    = view.findViewById(R.id.tv_route_label)
+            val rank:    TextView    = view.findViewById(R.id.tv_rank)
+            val eta:     TextView    = view.findViewById(R.id.tv_eta)
+            val trend:   TextView    = view.findViewById(R.id.tv_trend)
+            val badge:   TextView    = view.findViewById(R.id.tv_congestion_badge)
+            val speed:   TextView    = view.findViewById(R.id.tv_speed)
+            val details: TextView    = view.findViewById(R.id.tv_details)
+            val signals: TextView    = view.findViewById(R.id.tv_signals)
+            val pb:      ProgressBar = view.findViewById(R.id.pb_congestion)
+            val why:     TextView    = view.findViewById(R.id.tv_why)
+            val eco:     TextView    = view.findViewById(R.id.tv_eco)
+            val points:  TextView    = view.findViewById(R.id.tv_points)
         }
 
         override fun onCreateViewHolder(parent: ViewGroup, viewType: Int): VH =
             VH(LayoutInflater.from(parent.context).inflate(R.layout.item_route, parent, false))
 
-        override fun getItemCount() = routes.size
+        override fun getItemCount() = cards.size
 
         override fun onBindViewHolder(holder: VH, position: Int) {
-            val route = routes[position]
-            val count = liveCounts.getOrElse(position) { 100 }
+            val card  = cards[position]
+            val idx   = card.routeNo - 1
+            val count = liveCounts.getOrElse(idx) { 100 }
             val color = congestionColor(count)
-            val label = congestionLabel(count)
-            val icon  = congestionIcon(count)
-            val eta   = adjustedEta(route.durationMin, count)
+            val eta   = adjustedEta(card.route.durationMin, count)
             val speed = expectedSpeed(count)
-
-            val bestIdx       = liveCounts.indices.minByOrNull { liveCounts[it] } ?: -1
-            val isRecommended = position == bestIdx
+            val (synced, total) = signals(card.route.distanceKm, count)
+            val pts   = greenPoints(count, liveCounts)
+            val isPick = position == 0
 
             holder.strip.setBackgroundColor(color)
-            holder.tvLabel.text = "Route ${position + 1}"
-            holder.tvBadge.text = "$icon  $label"
-            holder.tvBadge.backgroundTintList = ColorStateList.valueOf(color)
-            holder.tvRecommend.visibility = if (isRecommended) View.VISIBLE else View.GONE
-            holder.tvEta.text   = "~$eta min"
-            holder.tvSpeed.text = "~$speed km/h avg"
-            holder.tvDetails.text  = "%.1f km  ·  base ~%.0f min".format(route.distanceKm, route.durationMin)
-            holder.tvSummary.text  = route.summary.ifBlank { "Route ${position + 1}" }
+            holder.label.text = "ROUTE ${card.routeNo}  ·  ${card.route.summary.ifBlank { "city roads" }}"
 
-            val ecoText = ecoLabel(route.distanceKm, count, liveCounts)
-            holder.tvEco.text       = ecoText ?: ""
-            holder.tvEco.visibility = if (ecoText != null) View.VISIBLE else View.GONE
+            holder.rank.text = if (isPick) "✦ GREENSYNC PICK" else "#${position + 1}"
+            holder.rank.backgroundTintList = ColorStateList.valueOf(
+                if (isPick) color else Color.parseColor("#1B241D"))
+            holder.rank.setTextColor(
+                if (isPick) Color.parseColor("#0A0F0C") else Color.parseColor("#8B978C"))
 
-            holder.tvUsers.text   = "👥 $count active  "
-            holder.pbBar.progress = congestionProgress(count)
-            holder.pbBar.progressTintList = ColorStateList.valueOf(color)
+            holder.eta.text = "$eta min"
 
-            holder.itemView.setOnClickListener { onClick(route, position) }
+            val (trendText, trendColor) = when {
+                count > 500 -> "▲ filling fast" to Color.parseColor("#FF5247")
+                count > 150 -> "▬ steady"       to Color.parseColor("#FFB300")
+                else        -> "▼ clearing"     to Color.parseColor("#2DE371")
+            }
+            holder.trend.text = trendText
+            holder.trend.setTextColor(trendColor)
+
+            holder.badge.text = "${congestionIcon(count)} ${congestionLabel(count)}"
+            holder.badge.backgroundTintList = ColorStateList.valueOf(color)
+
+            holder.speed.text   = "🚗 $speed km/h"
+            holder.details.text = "📏 %.1f km".format(card.route.distanceKm)
+            holder.signals.text = "🚦 $synced/$total synced"
+
+            holder.pb.progress = congestionProgress(count)
+            holder.pb.progressTintList = ColorStateList.valueOf(color)
+
+            holder.why.text = when {
+                count > 500 -> "$count cars committed ahead — heavy load, expect stop-go"
+                count > 150 -> "$count committed ahead — moderate, steady flow"
+                else        -> "only $count committed — clear corridor, green wave on"
+            }
+
+            val savedKg = ecoSavedKg(card.route.distanceKm, count, liveCounts)
+            holder.eco.text = if (savedKg > 0.05) "🍃 −%.1f kg CO₂".format(savedKg) else "🍃 baseline"
+            holder.points.text = "+$pts pts"
+
+            holder.itemView.setOnClickListener { onSelect(card) }
         }
 
-        fun updateRoutes(newRoutes: List<Route>) {
-            routes = newRoutes
+        fun submit(newCards: List<RouteCard>, newMode: Mode) {
+            cards = newCards
+            mode = newMode
             notifyDataSetChanged()
         }
     }

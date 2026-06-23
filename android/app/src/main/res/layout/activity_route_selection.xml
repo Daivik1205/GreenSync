@@ -36,7 +36,7 @@
         app:layout_constraintBottom_toBottomOf="parent"
         app:layout_constraintStart_toStartOf="parent"
         app:layout_constraintEnd_toEndOf="parent"
-        app:layout_constraintHeight_percent="0.44">
+        app:layout_constraintHeight_percent="0.54">
 
         <!-- Header -->
         <LinearLayout
@@ -47,37 +47,117 @@
             android:paddingTop="14dp"
             android:paddingBottom="8dp">
 
-            <!-- Origin → Destination -->
-            <TextView
-                android:id="@+id/tv_route_header"
-                android:layout_width="match_parent"
-                android:layout_height="wrap_content"
-                android:textColor="@color/white"
-                android:textSize="17sp"
-                android:textStyle="bold" />
-
+            <!-- Origin → Destination + GreenPoints -->
             <LinearLayout
                 android:layout_width="match_parent"
                 android:layout_height="wrap_content"
                 android:orientation="horizontal"
-                android:layout_marginTop="2dp"
                 android:gravity="center_vertical">
 
                 <TextView
+                    android:id="@+id/tv_route_header"
                     android:layout_width="0dp"
-                    android:layout_height="wrap_content"
                     android:layout_weight="1"
-                    android:text="Choose your route"
-                    android:textColor="@color/secondary_text"
-                    android:textSize="13sp" />
+                    android:layout_height="wrap_content"
+                    android:fontFamily="@font/space_grotesk"
+                    android:textColor="@color/text_primary"
+                    android:textSize="18sp"
+                    android:textStyle="bold"
+                    android:letterSpacing="-0.02" />
 
                 <TextView
-                    android:id="@+id/tv_total_users"
+                    android:id="@+id/tv_green_points"
                     android:layout_width="wrap_content"
                     android:layout_height="wrap_content"
-                    android:textColor="@color/hint_text"
-                    android:textSize="12sp" />
+                    android:paddingHorizontal="10dp"
+                    android:paddingVertical="5dp"
+                    android:fontFamily="@font/jetbrains_mono"
+                    android:textSize="12sp"
+                    android:textStyle="bold"
+                    android:textColor="@color/accent_green"
+                    android:background="@drawable/chip_outline" />
             </LinearLayout>
+
+            <!-- Network optimisation readout -->
+            <TextView
+                android:id="@+id/tv_network_status"
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:layout_marginTop="4dp"
+                android:fontFamily="@font/jetbrains_mono"
+                android:textColor="@color/secondary_text"
+                android:textSize="11sp" />
+
+            <!-- Optimisation mode chips -->
+            <HorizontalScrollView
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:layout_marginTop="12dp"
+                android:scrollbars="none">
+
+                <LinearLayout
+                    android:id="@+id/ll_modes"
+                    android:layout_width="wrap_content"
+                    android:layout_height="wrap_content"
+                    android:orientation="horizontal">
+
+                    <TextView
+                        android:id="@+id/chip_balanced"
+                        android:layout_width="wrap_content"
+                        android:layout_height="wrap_content"
+                        android:layout_marginEnd="8dp"
+                        android:paddingHorizontal="14dp"
+                        android:paddingVertical="8dp"
+                        android:fontFamily="@font/jetbrains_mono"
+                        android:text="🎯 Balanced"
+                        android:textSize="12sp"
+                        android:background="@drawable/chip_outline" />
+
+                    <TextView
+                        android:id="@+id/chip_fastest"
+                        android:layout_width="wrap_content"
+                        android:layout_height="wrap_content"
+                        android:layout_marginEnd="8dp"
+                        android:paddingHorizontal="14dp"
+                        android:paddingVertical="8dp"
+                        android:fontFamily="@font/jetbrains_mono"
+                        android:text="⚡ Fastest"
+                        android:textSize="12sp"
+                        android:background="@drawable/chip_outline" />
+
+                    <TextView
+                        android:id="@+id/chip_greenest"
+                        android:layout_width="wrap_content"
+                        android:layout_height="wrap_content"
+                        android:layout_marginEnd="8dp"
+                        android:paddingHorizontal="14dp"
+                        android:paddingVertical="8dp"
+                        android:fontFamily="@font/jetbrains_mono"
+                        android:text="🍃 Greenest"
+                        android:textSize="12sp"
+                        android:background="@drawable/chip_outline" />
+
+                    <TextView
+                        android:id="@+id/chip_smoothest"
+                        android:layout_width="wrap_content"
+                        android:layout_height="wrap_content"
+                        android:paddingHorizontal="14dp"
+                        android:paddingVertical="8dp"
+                        android:fontFamily="@font/jetbrains_mono"
+                        android:text="🌊 Smoothest"
+                        android:textSize="12sp"
+                        android:background="@drawable/chip_outline" />
+                </LinearLayout>
+            </HorizontalScrollView>
+
+            <TextView
+                android:id="@+id/tv_total_users"
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:layout_marginTop="8dp"
+                android:fontFamily="@font/jetbrains_mono"
+                android:textColor="@color/hint_text"
+                android:textSize="11sp" />
         </LinearLayout>
 
         <!-- Live community alert ticker -->
