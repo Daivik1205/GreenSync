@@ -31,6 +31,7 @@ class HUDActivity : AppCompatActivity() {
         private const val EXTRA_USER_COUNT   = "user_count"
         private const val EXTRA_ALL_COUNTS   = "all_counts"
         private const val EXTRA_DEST_NAME    = "dest_name"
+        private const val EXTRA_ORIGIN_NAME  = "origin_name"
         private const val EXTRA_ETA          = "adjusted_eta"
         private const val EXTRA_SPEED        = "expected_speed"
         private const val EXTRA_DISTANCE     = "distance_km"
@@ -43,6 +44,7 @@ class HUDActivity : AppCompatActivity() {
             userCount:   Int,
             allCounts:   IntArray,
             destName:    String = "Destination",
+            originName:  String = "Origin",
             adjustedEta: Int    = 0,
             speed:       Int    = 0,
             distanceKm:  Double = 0.0,
@@ -53,6 +55,7 @@ class HUDActivity : AppCompatActivity() {
             putExtra(EXTRA_USER_COUNT,   userCount)
             putExtra(EXTRA_ALL_COUNTS,   allCounts)
             putExtra(EXTRA_DEST_NAME,    destName)
+            putExtra(EXTRA_ORIGIN_NAME,  originName)
             putExtra(EXTRA_ETA,          adjustedEta)
             putExtra(EXTRA_SPEED,        speed)
             putExtra(EXTRA_DISTANCE,     distanceKm)
@@ -72,6 +75,7 @@ class HUDActivity : AppCompatActivity() {
         val userCount   = intent.getIntExtra(EXTRA_USER_COUNT, 100)
         val allCounts   = intent.getIntArrayExtra(EXTRA_ALL_COUNTS) ?: MOCK_USER_COUNTS
         val destName    = intent.getStringExtra(EXTRA_DEST_NAME)    ?: "Destination"
+        val originName  = intent.getStringExtra(EXTRA_ORIGIN_NAME) ?: "Origin"
         val eta         = intent.getIntExtra(EXTRA_ETA, 0)
         val speed       = intent.getIntExtra(EXTRA_SPEED, 0)
         val distance    = intent.getDoubleExtra(EXTRA_DISTANCE, 0.0)
@@ -85,7 +89,7 @@ class HUDActivity : AppCompatActivity() {
         findViewById<TextView>(R.id.btn_back).setOnClickListener { finish() }
 
         // Header
-        findViewById<TextView>(R.id.tv_hud_title).text = "Yelahanka  →  $destName"
+        findViewById<TextView>(R.id.tv_hud_title).text = "$originName  →  $destName"
 
         // Route confirmed banner
         val routeNum   = selectedIdx + 1

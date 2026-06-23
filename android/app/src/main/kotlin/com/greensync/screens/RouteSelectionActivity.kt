@@ -22,6 +22,9 @@ import com.greensync.models.Route
 import com.greensync.screens.DestinationPickerActivity.Companion.EXTRA_DEST_LAT
 import com.greensync.screens.DestinationPickerActivity.Companion.EXTRA_DEST_LNG
 import com.greensync.screens.DestinationPickerActivity.Companion.EXTRA_DEST_NAME
+import com.greensync.screens.DestinationPickerActivity.Companion.EXTRA_ORIGIN_LAT
+import com.greensync.screens.DestinationPickerActivity.Companion.EXTRA_ORIGIN_LNG
+import com.greensync.screens.DestinationPickerActivity.Companion.EXTRA_ORIGIN_NAME
 import com.greensync.viewmodels.RouteUiState
 import com.greensync.viewmodels.RouteViewModel
 import kotlinx.coroutines.flow.collectLatest
@@ -37,6 +40,7 @@ import kotlin.random.Random
 class RouteSelectionActivity : AppCompatActivity() {
 
     companion object {
+        // Yelahanka fallback used when no GPS fix is available
         val ORIGIN = LatLng(13.1007, 77.5963)
         val MOCK_USER_COUNTS = intArrayOf(312, 89, 641)
 
@@ -109,6 +113,8 @@ class RouteSelectionActivity : AppCompatActivity() {
 
     private lateinit var destName: String
     private lateinit var destination: LatLng
+    private lateinit var origin: LatLng
+    private lateinit var originName: String
 
     // Live crowd simulation
     private val liveCounts = MOCK_USER_COUNTS.copyOf()
@@ -132,18 +138,22 @@ class RouteSelectionActivity : AppCompatActivity() {
         Configuration.getInstance().userAgentValue = packageName
         setContentView(R.layout.activity_route_selection)
 
-        destName    = intent.getStringExtra(EXTRA_DEST_NAME) ?: "Destination"
-        val destLat = intent.getDoubleExtra(EXTRA_DEST_LAT, 12.9121)
-        val destLng = intent.getDoubleExtra(EXTRA_DEST_LNG, 77.5590)
-        destination = LatLng(destLat, destLng)
+        destName   = intent.getStringExtra(EXTRA_DEST_NAME)   ?: "Destination"
+        originName = intent.getStringExtra(EXTRA_ORIGIN_NAME) ?: "Yelahanka"
+        val destLat   = intent.getDoubleExtra(EXTRA_DEST_LAT,   12.9121)
+        val destLng   = intent.getDoubleExtra(EXTRA_DEST_LNG,   77.5590)
+        val originLat = intent.getDoubleExtra(EXTRA_ORIGIN_LAT, ORIGIN.latitude)
+        val originLng = intent.getDoubleExtra(EXTRA_ORIGIN_LNG, ORIGIN.longitude)
+        destination   = LatLng(destLat, destLng)
+        origin        = LatLng(originLat, originLng)
 
-        findViewById<TextView>(R.id.tv_route_header).text = "Yelahanka  →  $destName"
+        findViewById<TextView>(R.id.tv_route_header).text = "$originName  →  $destName"
 
         mapView = findViewById(R.id.map_view)
         mapView.setTileSource(TileSourceFactory.MAPNIK)
         mapView.setMultiTouchControls(true)
         mapView.controller.setZoom(11.0)
-        mapView.controller.setCenter(GeoPoint(ORIGIN.latitude, ORIGIN.longitude))
+        mapView.controller.setCenter(GeoPoint(origin.latitude, origin.longitude))
 
         findViewById<TextView>(R.id.tv_total_users).text = "${liveCounts.sum()} users tracked"
 
@@ -160,7 +170,7 @@ class RouteSelectionActivity : AppCompatActivity() {
         rv.adapter = adapter
 
         observeViewModel()
-        viewModel.fetchRoutes(ORIGIN, destination)
+        viewModel.fetchRoutes(origin, destination)
     }
 
     override fun onResume() {
@@ -253,6 +263,7 @@ class RouteSelectionActivity : AppCompatActivity() {
                 userCount   = userCount,
                 allCounts   = liveCounts,
                 destName    = destName,
+                originName  = originName,
                 adjustedEta = eta,
                 speed       = speed,
                 distanceKm  = route.distanceKm,
