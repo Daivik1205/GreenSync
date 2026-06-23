@@ -5,6 +5,7 @@
     <uses-permission android:name="android.permission.ACCESS_FINE_LOCATION" />
     <uses-permission android:name="android.permission.ACCESS_COARSE_LOCATION" />
     <uses-permission android:name="android.permission.FOREGROUND_SERVICE" />
+    <uses-permission android:name="android.permission.FOREGROUND_SERVICE_DATA_SYNC" />
     <!-- Car permission — required for CarPropertyManager access on AAOS -->
     <uses-permission android:name="android.car.permission.CAR_SPEED" />
     <uses-permission android:name="android.car.permission.CAR_ENERGY" />
@@ -26,6 +27,14 @@
             </intent-filter>
         </activity>
 
+        <activity
+            android:name=".screens.RouteSelectionActivity"
+            android:exported="false" />
+
+        <activity
+            android:name=".screens.HUDActivity"
+            android:exported="false" />
+
         <!-- Android Auto Car App Service -->
         <service
             android:name=".GreenSyncCarAppService"
@@ -41,13 +50,13 @@
         <service
             android:name=".services.MqttIntentService"
             android:exported="false"
-            android:foregroundServiceType="connectedDevice" />
+            android:foregroundServiceType="dataSync" />
 
         <!-- ECU telemetry service (runs only on AAOS) -->
         <service
             android:name=".services.EcuTelemetryService"
             android:exported="false"
-            android:foregroundServiceType="connectedDevice" />
+            android:foregroundServiceType="dataSync" />
 
         <!-- Paho MQTT Android service -->
         <service android:name="org.eclipse.paho.android.service.MqttService" />
