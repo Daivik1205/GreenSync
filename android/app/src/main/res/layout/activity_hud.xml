@@ -4,62 +4,180 @@
     android:layout_width="match_parent"
     android:layout_height="match_parent"
     android:orientation="vertical"
-    android:gravity="center"
-    android:padding="32dp"
-    android:background="#111111">
+    android:background="@color/surface_dark"
+    android:padding="20dp">
 
+    <!-- Route label -->
     <TextView
         android:id="@+id/tv_route_label"
         android:layout_width="match_parent"
         android:layout_height="wrap_content"
-        android:textColor="#AAAAAA"
+        android:textColor="@color/secondary_text"
         android:textSize="13sp"
         android:gravity="center"
-        android:layout_marginBottom="32dp" />
+        android:layout_marginTop="8dp" />
 
-    <!-- Primary advisory — full-width, large -->
-    <TextView
-        android:id="@+id/tv_advisory"
+    <!-- Congestion level - big central display -->
+    <LinearLayout
         android:layout_width="match_parent"
-        android:layout_height="wrap_content"
-        android:text="CONNECTING…"
-        android:textColor="#FFFFFF"
-        android:textSize="56sp"
-        android:textStyle="bold"
-        android:gravity="center"
-        android:padding="24dp" />
+        android:layout_height="0dp"
+        android:layout_weight="1"
+        android:orientation="vertical"
+        android:gravity="center">
 
-    <TextView
-        android:id="@+id/tv_suggested_speed"
-        android:layout_width="match_parent"
-        android:layout_height="wrap_content"
-        android:textColor="#DDDDDD"
-        android:textSize="24sp"
-        android:gravity="center"
-        android:layout_marginTop="16dp" />
+        <TextView
+            android:id="@+id/tv_congestion_icon"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:layout_gravity="center"
+            android:textSize="52sp" />
 
+        <TextView
+            android:id="@+id/tv_congestion_level"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:layout_gravity="center"
+            android:layout_marginTop="4dp"
+            android:textSize="36sp"
+            android:textStyle="bold"
+            android:textColor="@color/white" />
+
+        <TextView
+            android:id="@+id/tv_congestion_label"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:layout_gravity="center"
+            android:textSize="14sp"
+            android:textColor="@color/secondary_text"
+            android:text="CONGESTION" />
+
+        <TextView
+            android:id="@+id/tv_you_joined"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:layout_gravity="center"
+            android:layout_marginTop="16dp"
+            android:paddingHorizontal="16dp"
+            android:paddingVertical="8dp"
+            android:background="#1F1F1F"
+            android:textSize="14sp"
+            android:textColor="@color/secondary_text" />
+    </LinearLayout>
+
+    <!-- Divider -->
     <View
         android:layout_width="match_parent"
         android:layout_height="1dp"
-        android:background="#333333"
-        android:layout_marginTop="32dp"
-        android:layout_marginBottom="32dp" />
+        android:background="#2A2A2A"
+        android:layout_marginBottom="16dp" />
 
+    <!-- Route comparison -->
     <TextView
-        android:id="@+id/tv_phase"
         android:layout_width="match_parent"
         android:layout_height="wrap_content"
-        android:textColor="#CCCCCC"
-        android:textSize="16sp"
-        android:gravity="center" />
+        android:text="ROUTE COMPARISON"
+        android:textColor="@color/hint_text"
+        android:textSize="11sp"
+        android:letterSpacing="0.12"
+        android:layout_marginBottom="12dp" />
 
-    <TextView
-        android:id="@+id/tv_queue"
+    <LinearLayout
+        android:id="@+id/ll_route_0"
         android:layout_width="match_parent"
         android:layout_height="wrap_content"
-        android:textColor="#CCCCCC"
-        android:textSize="16sp"
-        android:gravity="center"
-        android:layout_marginTop="8dp" />
+        android:orientation="horizontal"
+        android:gravity="center_vertical"
+        android:layout_marginBottom="8dp">
+
+        <TextView
+            android:id="@+id/tv_cmp_label_0"
+            android:layout_width="60dp"
+            android:layout_height="wrap_content"
+            android:textColor="@color/secondary_text"
+            android:textSize="12sp" />
+
+        <ProgressBar
+            android:id="@+id/pb_cmp_0"
+            style="@style/Widget.AppCompat.ProgressBar.Horizontal"
+            android:layout_width="0dp"
+            android:layout_height="8dp"
+            android:layout_weight="1"
+            android:layout_marginHorizontal="8dp"
+            android:max="100" />
+
+        <TextView
+            android:id="@+id/tv_cmp_count_0"
+            android:layout_width="80dp"
+            android:layout_height="wrap_content"
+            android:textColor="@color/secondary_text"
+            android:textSize="12sp"
+            android:gravity="end" />
+    </LinearLayout>
+
+    <LinearLayout
+        android:id="@+id/ll_route_1"
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:orientation="horizontal"
+        android:gravity="center_vertical"
+        android:layout_marginBottom="8dp">
+
+        <TextView
+            android:id="@+id/tv_cmp_label_1"
+            android:layout_width="60dp"
+            android:layout_height="wrap_content"
+            android:textColor="@color/secondary_text"
+            android:textSize="12sp" />
+
+        <ProgressBar
+            android:id="@+id/pb_cmp_1"
+            style="@style/Widget.AppCompat.ProgressBar.Horizontal"
+            android:layout_width="0dp"
+            android:layout_height="8dp"
+            android:layout_weight="1"
+            android:layout_marginHorizontal="8dp"
+            android:max="100" />
+
+        <TextView
+            android:id="@+id/tv_cmp_count_1"
+            android:layout_width="80dp"
+            android:layout_height="wrap_content"
+            android:textColor="@color/secondary_text"
+            android:textSize="12sp"
+            android:gravity="end" />
+    </LinearLayout>
+
+    <LinearLayout
+        android:id="@+id/ll_route_2"
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:orientation="horizontal"
+        android:gravity="center_vertical"
+        android:layout_marginBottom="16dp">
+
+        <TextView
+            android:id="@+id/tv_cmp_label_2"
+            android:layout_width="60dp"
+            android:layout_height="wrap_content"
+            android:textColor="@color/secondary_text"
+            android:textSize="12sp" />
+
+        <ProgressBar
+            android:id="@+id/pb_cmp_2"
+            style="@style/Widget.AppCompat.ProgressBar.Horizontal"
+            android:layout_width="0dp"
+            android:layout_height="8dp"
+            android:layout_weight="1"
+            android:layout_marginHorizontal="8dp"
+            android:max="100" />
+
+        <TextView
+            android:id="@+id/tv_cmp_count_2"
+            android:layout_width="80dp"
+            android:layout_height="wrap_content"
+            android:textColor="@color/secondary_text"
+            android:textSize="12sp"
+            android:gravity="end" />
+    </LinearLayout>
 
 </LinearLayout>
