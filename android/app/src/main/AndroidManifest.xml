@@ -1,0 +1,65 @@
+<?xml version="1.0" encoding="utf-8"?>
+<manifest xmlns:android="http://schemas.android.com/apk/res/android">
+
+    <uses-permission android:name="android.permission.INTERNET" />
+    <uses-permission android:name="android.permission.ACCESS_FINE_LOCATION" />
+    <uses-permission android:name="android.permission.ACCESS_COARSE_LOCATION" />
+    <uses-permission android:name="android.permission.FOREGROUND_SERVICE" />
+    <!-- Car permission — required for CarPropertyManager access on AAOS -->
+    <uses-permission android:name="android.car.permission.CAR_SPEED" />
+    <uses-permission android:name="android.car.permission.CAR_ENERGY" />
+
+    <application
+        android:name=".GreenSyncApp"
+        android:label="GreenSync"
+        android:icon="@mipmap/ic_launcher"
+        android:theme="@style/Theme.GreenSync"
+        android:allowBackup="true">
+
+        <!-- Phone entry point -->
+        <activity
+            android:name=".MainActivity"
+            android:exported="true">
+            <intent-filter>
+                <action android:name="android.intent.action.MAIN" />
+                <category android:name="android.intent.category.LAUNCHER" />
+            </intent-filter>
+        </activity>
+
+        <!-- Android Auto Car App Service -->
+        <service
+            android:name=".GreenSyncCarAppService"
+            android:exported="true"
+            android:label="GreenSync Nav">
+            <intent-filter>
+                <action android:name="androidx.car.app.CarAppService" />
+                <category android:name="androidx.car.app.category.NAVIGATION" />
+            </intent-filter>
+        </service>
+
+        <!-- MQTT background service -->
+        <service
+            android:name=".services.MqttIntentService"
+            android:exported="false"
+            android:foregroundServiceType="connectedDevice" />
+
+        <!-- ECU telemetry service (runs only on AAOS) -->
+        <service
+            android:name=".services.EcuTelemetryService"
+            android:exported="false"
+            android:foregroundServiceType="connectedDevice" />
+
+        <!-- Paho MQTT Android service -->
+        <service android:name="org.eclipse.paho.android.service.MqttService" />
+
+        <meta-data
+            android:name="com.google.android.geo.API_KEY"
+            android:value="${MAPS_API_KEY}" />
+
+        <!-- Car App API level declaration -->
+        <meta-data
+            android:name="androidx.car.app.minCarApiLevel"
+            android:value="3" />
+    </application>
+
+</manifest>

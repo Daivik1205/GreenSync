@@ -7,9 +7,13 @@ Updated as the project evolves. Read this at the start of every session.
 
 ## What This Project Is
 
-**GreenSync** — an Edge AI V2X (Vehicle-to-Infrastructure) framework for urban traffic
-optimization, simulated using SUMO + TraCI. Backend runs on Raspberry Pi.
-Flutter app is the primary user-facing deliverable.
+**GreenSync V2** — a hybrid-real-world crowd-prediction V2I engine for Bengaluru.
+Pivoted from pure SUMO simulation to: TomTom live traffic baseline +
+crowdsourced Android intent routing + Android Auto ECU telemetry +
+SUMO shadow vehicle closed-loop validation.
+
+**Old flow:** Synthetic SUMO → RSU → Static Routing
+**New flow:** TomTom API + User Intents → HybridDigitalTwin → A* → Shadow Vehicles → SUMO
 
 **Core loop:**
 SUMO simulation → RSU zone sensing → MQTT → Digital Twin → AI prediction
@@ -24,16 +28,22 @@ ChemE member uses SQL queries on Supabase for emissions analysis.
 
 | Phase | Module | Status |
 |---|---|---|
-| 1 — SUMO Simulation | `greensync_phase1/`, `simulation/traci_interface.py` | Basic done |
-| 2 — RSU Zone Sensing | `rsu/rsu_manager.py` | Scaffold |
-| 3 — MQTT Communication | `communication/publisher.py`, `subscriber.py` | Scaffold |
-| 4 — Event Classification | `event_classifier/classifier.py` | Scaffold |
-| 5 — Digital Twin | `digital_twin/twin.py` | Scaffold |
-| 6 — AI Models | `ai/gru_predictor.py`, `ai/xgboost_signal.py` | Scaffold |
-| 7 — Event Propagation | `propagation/propagator.py` | Scaffold |
-| 8 — Eco-Routing | `routing/router.py` | Scaffold |
-| 9 — Flutter App | `app/` | Scaffold |
-| 10 — Integration | `main.py` | Scaffold |
+| 1 — SUMO Simulation | `simulation/traci_interface.py` | Done |
+| 2 — RSU Zone Sensing | `rsu/` | Done |
+| 3 — MQTT Communication | `communication/publisher.py` | Done |
+| 4 — Event Classification | `event_classifier/classifier.py` | Done |
+| 5 — Digital Twin | `digital_twin/twin.py` | Done |
+| 6 — AI Models | `ai/` | Scaffold |
+| 7 — Event Propagation | `propagation/propagator.py` | Done |
+| 8 — Eco-Routing | `routing/router.py` | Done |
+| 9 — Flutter App | `app/` | Legacy scaffold |
+| 10 — Integration | `main.py` | Done |
+| **A — Android Client** | `android/` | **Done** |
+| **B — TomTom Poller** | `backend/tomtom_poller.py` | **Done** |
+| **B — Intent Aggregator** | `backend/intent_aggregator.py` | **Done** |
+| **B — Hybrid Twin** | `backend/hybrid_twin.py` | **Done** |
+| **C — Shadow Vehicles** | `backend/shadow_vehicle_injector.py` | **Done** |
+| **V2 Orchestrator** | `backend/v2_main.py` | **Done** |
 
 ---
 
