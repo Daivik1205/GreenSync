@@ -94,7 +94,8 @@
                         android:id="@+id/tv_stat_eta"
                         android:layout_width="wrap_content"
                         android:layout_height="wrap_content"
-                        android:textColor="@color/white"
+                        android:fontFamily="@font/jetbrains_mono"
+                        android:textColor="@color/text_primary"
                         android:textSize="28sp"
                         android:textStyle="bold"
                         android:layout_marginTop="2dp" />
@@ -132,6 +133,7 @@
                         android:id="@+id/tv_stat_speed"
                         android:layout_width="wrap_content"
                         android:layout_height="wrap_content"
+                        android:fontFamily="@font/jetbrains_mono"
                         android:textSize="28sp"
                         android:textStyle="bold"
                         android:layout_marginTop="2dp" />
@@ -169,7 +171,8 @@
                         android:id="@+id/tv_stat_distance"
                         android:layout_width="wrap_content"
                         android:layout_height="wrap_content"
-                        android:textColor="@color/white"
+                        android:fontFamily="@font/jetbrains_mono"
+                        android:textColor="@color/text_primary"
                         android:textSize="28sp"
                         android:textStyle="bold"
                         android:layout_marginTop="2dp" />
@@ -220,6 +223,7 @@
                         android:layout_width="wrap_content"
                         android:layout_height="wrap_content"
                         android:layout_marginTop="4dp"
+                        android:fontFamily="@font/jetbrains_mono"
                         android:textSize="20sp"
                         android:textStyle="bold" />
 
@@ -242,7 +246,8 @@
                         android:id="@+id/tv_signal_countdown"
                         android:layout_width="wrap_content"
                         android:layout_height="wrap_content"
-                        android:textColor="@color/white"
+                        android:fontFamily="@font/jetbrains_mono"
+                        android:textColor="@color/text_primary"
                         android:textSize="36sp"
                         android:textStyle="bold"
                         android:gravity="center" />
@@ -328,7 +333,7 @@
             android:layout_marginBottom="8dp">
             <TextView android:id="@+id/tv_cmp_label_0" android:layout_width="64dp" android:layout_height="wrap_content" android:textColor="@color/secondary_text" android:textSize="12sp" />
             <ProgressBar android:id="@+id/pb_cmp_0" style="@style/Widget.AppCompat.ProgressBar.Horizontal" android:layout_width="0dp" android:layout_height="8dp" android:layout_weight="1" android:layout_marginHorizontal="8dp" android:max="100" />
-            <TextView android:id="@+id/tv_cmp_count_0" android:layout_width="100dp" android:layout_height="wrap_content" android:textColor="@color/secondary_text" android:textSize="11sp" android:gravity="end" />
+            <TextView android:id="@+id/tv_cmp_count_0" android:layout_width="100dp" android:layout_height="wrap_content" android:fontFamily="@font/jetbrains_mono" android:textColor="@color/secondary_text" android:textSize="11sp" android:gravity="end" />
         </LinearLayout>
 
         <LinearLayout
@@ -340,7 +345,7 @@
             android:layout_marginBottom="8dp">
             <TextView android:id="@+id/tv_cmp_label_1" android:layout_width="64dp" android:layout_height="wrap_content" android:textColor="@color/secondary_text" android:textSize="12sp" />
             <ProgressBar android:id="@+id/pb_cmp_1" style="@style/Widget.AppCompat.ProgressBar.Horizontal" android:layout_width="0dp" android:layout_height="8dp" android:layout_weight="1" android:layout_marginHorizontal="8dp" android:max="100" />
-            <TextView android:id="@+id/tv_cmp_count_1" android:layout_width="100dp" android:layout_height="wrap_content" android:textColor="@color/secondary_text" android:textSize="11sp" android:gravity="end" />
+            <TextView android:id="@+id/tv_cmp_count_1" android:layout_width="100dp" android:layout_height="wrap_content" android:fontFamily="@font/jetbrains_mono" android:textColor="@color/secondary_text" android:textSize="11sp" android:gravity="end" />
         </LinearLayout>
 
         <LinearLayout
@@ -352,7 +357,7 @@
             android:layout_marginBottom="16dp">
             <TextView android:id="@+id/tv_cmp_label_2" android:layout_width="64dp" android:layout_height="wrap_content" android:textColor="@color/secondary_text" android:textSize="12sp" />
             <ProgressBar android:id="@+id/pb_cmp_2" style="@style/Widget.AppCompat.ProgressBar.Horizontal" android:layout_width="0dp" android:layout_height="8dp" android:layout_weight="1" android:layout_marginHorizontal="8dp" android:max="100" />
-            <TextView android:id="@+id/tv_cmp_count_2" android:layout_width="100dp" android:layout_height="wrap_content" android:textColor="@color/secondary_text" android:textSize="11sp" android:gravity="end" />
+            <TextView android:id="@+id/tv_cmp_count_2" android:layout_width="100dp" android:layout_height="wrap_content" android:fontFamily="@font/jetbrains_mono" android:textColor="@color/secondary_text" android:textSize="11sp" android:gravity="end" />
         </LinearLayout>
 
         <!-- Divider -->

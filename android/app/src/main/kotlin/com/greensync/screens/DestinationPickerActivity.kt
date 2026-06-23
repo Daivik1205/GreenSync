@@ -1,7 +1,9 @@
 package com.greensync.screens
 
 import android.Manifest
+import android.animation.ValueAnimator
 import android.annotation.SuppressLint
+import android.content.Context
 import android.content.Intent
 import android.content.pm.PackageManager
 import android.location.Geocoder
@@ -9,14 +11,21 @@ import android.location.Location
 import android.location.LocationListener
 import android.location.LocationManager
 import android.os.Bundle
+import android.os.Handler
+import android.os.Looper
+import android.text.Editable
+import android.text.TextWatcher
 import android.view.LayoutInflater
 import android.view.View
 import android.view.ViewGroup
+import android.view.inputmethod.InputMethodManager
+import android.widget.EditText
 import android.widget.TextView
 import androidx.appcompat.app.AppCompatActivity
 import androidx.core.content.ContextCompat
 import androidx.lifecycle.lifecycleScope
 import androidx.recyclerview.widget.GridLayoutManager
+import androidx.recyclerview.widget.LinearLayoutManager
 import androidx.recyclerview.widget.RecyclerView
 import com.greensync.R
 import kotlinx.coroutines.Dispatchers
@@ -24,17 +33,21 @@ import kotlinx.coroutines.launch
 import kotlinx.coroutines.withContext
 import java.util.Calendar
 import java.util.Locale
+import kotlin.math.abs
+import kotlin.random.Random
 
 class DestinationPickerActivity : AppCompatActivity() {
 
-    data class Destination(
+    data class Place(
         val name: String,
         val area: String,
         val emoji: String,
         val lat: Double,
         val lng: Double,
-        val going: Int,
-    )
+    ) {
+        /** Stable pseudo-random "commuters heading here" count. */
+        val going: Int get() = 60 + (abs((name + area).hashCode()) % 1180)
+    }
 
     companion object {
         const val EXTRA_DEST_NAME   = "dest_name"
@@ -44,56 +57,261 @@ class DestinationPickerActivity : AppCompatActivity() {
         const val EXTRA_ORIGIN_LNG  = "origin_lng"
         const val EXTRA_ORIGIN_NAME = "origin_name"
 
-        // Yelahanka fallback
         private const val FALLBACK_LAT  = 13.1007
         private const val FALLBACK_LNG  = 77.5963
         private const val FALLBACK_NAME = "Yelahanka"
 
-        val DESTINATIONS = listOf(
-            Destination("Home",        "Mysore Road",     "🏠", 12.9399, 77.5432, 1042),
-            Destination("Office",      "Electronic City", "💼", 12.8411, 77.6793,  867),
-            Destination("Airport",     "Devanahalli",     "✈️", 13.1986, 77.7066,  234),
-            Destination("Koramangala", "South Bengaluru", "🍕", 12.9352, 77.6245,  453),
-            Destination("Majestic",    "City Centre",     "🏛️", 12.9762, 77.5713,  712),
-            Destination("Whitefield",  "East Bengaluru",  "🏢", 12.9698, 77.7499,  589),
+        private const val PREFS        = "greensync_prefs"
+        private const val KEY_RECENTS  = "recent_places"
+
+        // Top tiles shown in "Popular now"
+        val POPULAR = listOf(
+            Place("Home",        "Mysore Road",     "🏠", 12.9399, 77.5432),
+            Place("Office",      "Electronic City", "💼", 12.8411, 77.6793),
+            Place("Airport",     "Devanahalli",     "✈️", 13.1986, 77.7066),
+            Place("Koramangala", "South Bengaluru", "🍕", 12.9352, 77.6245),
+            Place("Majestic",    "City Centre",     "🏛️", 12.9762, 77.5713),
+            Place("Whitefield",  "East Bengaluru",  "🏢", 12.9698, 77.7499),
         )
+
+        // Full searchable catalog of Bengaluru destinations
+        val CATALOG = POPULAR + listOf(
+            Place("Indiranagar",    "100ft Road",       "🍻", 12.9719, 77.6412),
+            Place("MG Road",        "Central Business",  "🛍️", 12.9756, 77.6068),
+            Place("Hebbal",         "North Bengaluru",   "🌳", 13.0358, 77.5970),
+            Place("Jayanagar",      "South Bengaluru",   "🌸", 12.9250, 77.5938),
+            Place("HSR Layout",     "Sector 1",          "☕", 12.9116, 77.6474),
+            Place("Marathahalli",   "Outer Ring Road",   "🛒", 12.9591, 77.6974),
+            Place("Banashankari",   "BSK Stage II",      "🛕", 12.9255, 77.5468),
+            Place("Yeshwanthpur",   "Tumkur Road",       "🚉", 13.0287, 77.5400),
+            Place("Hebbal Flyover", "Bellary Road",      "🛣️", 13.0410, 77.5910),
+            Place("Cubbon Park",    "Sampangi Rama",     "🌿", 12.9763, 77.5929),
+            Place("UB City",        "Vittal Mallya Rd",  "🥂", 12.9719, 77.5957),
+            Place("Sarjapur Road",  "South-East",        "🏗️", 12.9009, 77.6874),
+            Place("Bannerghatta",   "Bannerghatta Rd",   "🦁", 12.8000, 77.5770),
+            Place("Bellandur",      "Outer Ring Road",   "🏙️", 12.9258, 77.6762),
+            Place("Malleshwaram",   "Sampige Road",      "🏵️", 13.0035, 77.5709),
+            Place("KR Market",      "City Market",       "🥬", 12.9627, 77.5806),
+            Place("Electronic City","Phase 1",           "💻", 12.8452, 77.6602),
+            Place("ITPL",           "Whitefield",        "🖥️", 12.9856, 77.7367),
+        )
+
+        fun serialize(p: Place) =
+            "${p.name}¦${p.area}¦${p.emoji}¦${p.lat}¦${p.lng}"
+
+        fun deserialize(s: String): Place? {
+            val t = s.split("¦")
+            return if (t.size == 5)
+                Place(t[0], t[1], t[2], t[3].toDoubleOrNull() ?: return null, t[4].toDoubleOrNull() ?: return null)
+            else null
+        }
     }
 
     private var originLat  = FALLBACK_LAT
     private var originLng  = FALLBACK_LNG
     private var originName = FALLBACK_NAME
 
+    private lateinit var prefs: android.content.SharedPreferences
+    private val recents = mutableListOf<Place>()
+
+    private lateinit var recentAdapter:  PlaceTileAdapter
+    private lateinit var popularAdapter: PlaceTileAdapter
+    private lateinit var resultsAdapter: SearchResultAdapter
+
+    private val statusHandler = Handler(Looper.getMainLooper())
+    private var commuters = 1042
+    private var reports   = 38
+
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
         setContentView(R.layout.activity_destination_picker)
 
+        prefs = getSharedPreferences(PREFS, Context.MODE_PRIVATE)
+
+        // Greeting
         val hour = Calendar.getInstance().get(Calendar.HOUR_OF_DAY)
-        val greeting = when {
-            hour < 12 -> "Good morning!"
-            hour < 17 -> "Good afternoon!"
-            else      -> "Good evening!"
-        }
-        findViewById<TextView>(R.id.tv_greeting).text = greeting
-
-        val rv = findViewById<RecyclerView>(R.id.rv_destinations)
-        rv.layoutManager = GridLayoutManager(this, 2)
-        rv.adapter = DestAdapter(DESTINATIONS) { dest ->
-            startActivity(
-                Intent(this, RouteSelectionActivity::class.java).apply {
-                    putExtra(EXTRA_DEST_NAME,   dest.name)
-                    putExtra(EXTRA_DEST_LAT,    dest.lat)
-                    putExtra(EXTRA_DEST_LNG,    dest.lng)
-                    putExtra(EXTRA_ORIGIN_LAT,  originLat)
-                    putExtra(EXTRA_ORIGIN_LNG,  originLng)
-                    putExtra(EXTRA_ORIGIN_NAME, originName)
-                }
-            )
+        findViewById<TextView>(R.id.tv_greeting).text = when {
+            hour < 12 -> "Good morning."
+            hour < 17 -> "Good afternoon."
+            else      -> "Good evening."
         }
 
+        loadRecents()
+        setupLists()
+        setupSearch()
+        startLiveStatus()
         fetchLocation()
     }
 
-    // Active listener kept so we can remove it in onDestroy
+    override fun onResume() {
+        super.onResume()
+        // Reflect any newly-added recent after returning
+        loadRecents()
+        if (::recentAdapter.isInitialized) {
+            recentAdapter.submit(recents)
+            findViewById<View>(R.id.tv_recent_header).visibility =
+                if (recents.isEmpty()) View.GONE else View.VISIBLE
+            findViewById<View>(R.id.rv_recent).visibility =
+                if (recents.isEmpty()) View.GONE else View.VISIBLE
+        }
+    }
+
+    override fun onDestroy() {
+        super.onDestroy()
+        statusHandler.removeCallbacksAndMessages(null)
+        locationListener?.let {
+            (getSystemService(LOCATION_SERVICE) as LocationManager).removeUpdates(it)
+        }
+    }
+
+    // ── Lists ──────────────────────────────────────────────────────────────
+
+    private fun setupLists() {
+        popularAdapter = PlaceTileAdapter(POPULAR) { launchTo(it) }
+        findViewById<RecyclerView>(R.id.rv_popular).apply {
+            layoutManager = GridLayoutManager(this@DestinationPickerActivity, 2)
+            adapter = popularAdapter
+            isNestedScrollingEnabled = false
+        }
+
+        recentAdapter = PlaceTileAdapter(recents, recentChip = true) { launchTo(it) }
+        findViewById<RecyclerView>(R.id.rv_recent).apply {
+            layoutManager = LinearLayoutManager(
+                this@DestinationPickerActivity, LinearLayoutManager.HORIZONTAL, false)
+            adapter = recentAdapter
+            isNestedScrollingEnabled = false
+        }
+        findViewById<View>(R.id.tv_recent_header).visibility =
+            if (recents.isEmpty()) View.GONE else View.VISIBLE
+        findViewById<View>(R.id.rv_recent).visibility =
+            if (recents.isEmpty()) View.GONE else View.VISIBLE
+
+        resultsAdapter = SearchResultAdapter(emptyList()) { launchTo(it) }
+        findViewById<RecyclerView>(R.id.rv_results).apply {
+            layoutManager = LinearLayoutManager(this@DestinationPickerActivity)
+            adapter = resultsAdapter
+            isNestedScrollingEnabled = false
+        }
+    }
+
+    // ── Search ─────────────────────────────────────────────────────────────
+
+    private fun setupSearch() {
+        val et      = findViewById<EditText>(R.id.et_search)
+        val clear   = findViewById<TextView>(R.id.btn_clear_search)
+        val browse  = findViewById<View>(R.id.ll_browse)
+        val search  = findViewById<View>(R.id.ll_search)
+        val noRes   = findViewById<View>(R.id.tv_no_results)
+
+        et.addTextChangedListener(object : TextWatcher {
+            override fun beforeTextChanged(s: CharSequence?, a: Int, b: Int, c: Int) {}
+            override fun onTextChanged(s: CharSequence?, a: Int, b: Int, c: Int) {}
+            override fun afterTextChanged(s: Editable?) {
+                val q = s?.toString()?.trim().orEmpty()
+                if (q.isEmpty()) {
+                    clear.visibility  = View.GONE
+                    browse.visibility = View.VISIBLE
+                    search.visibility = View.GONE
+                } else {
+                    clear.visibility  = View.VISIBLE
+                    browse.visibility = View.GONE
+                    search.visibility = View.VISIBLE
+                    val matches = CATALOG.filter {
+                        it.name.contains(q, true) || it.area.contains(q, true)
+                    }
+                    resultsAdapter.submit(matches)
+                    noRes.visibility = if (matches.isEmpty()) View.VISIBLE else View.GONE
+                }
+            }
+        })
+
+        clear.setOnClickListener {
+            et.setText("")
+            et.clearFocus()
+            (getSystemService(INPUT_METHOD_SERVICE) as InputMethodManager)
+                .hideSoftInputFromWindow(et.windowToken, 0)
+        }
+    }
+
+    // ── Recents persistence ────────────────────────────────────────────────
+
+    private fun loadRecents() {
+        recents.clear()
+        val raw = prefs.getString(KEY_RECENTS, null)
+        if (raw.isNullOrBlank()) {
+            // Seed so the demo is never empty
+            recents.addAll(listOf(
+                CATALOG.first { it.name == "Majestic" },
+                CATALOG.first { it.name == "Indiranagar" },
+                CATALOG.first { it.name == "MG Road" },
+            ))
+            saveRecents()
+        } else {
+            raw.split("\n").mapNotNull { deserialize(it) }.forEach { recents.add(it) }
+        }
+    }
+
+    private fun addRecent(place: Place) {
+        recents.removeAll { it.name == place.name && it.area == place.area }
+        recents.add(0, place)
+        while (recents.size > 6) recents.removeAt(recents.size - 1)
+        saveRecents()
+    }
+
+    private fun saveRecents() {
+        prefs.edit()
+            .putString(KEY_RECENTS, recents.joinToString("\n") { serialize(it) })
+            .apply()
+    }
+
+    // ── Navigation ─────────────────────────────────────────────────────────
+
+    private fun launchTo(place: Place) {
+        addRecent(place)
+        startActivity(
+            Intent(this, RouteSelectionActivity::class.java).apply {
+                putExtra(EXTRA_DEST_NAME,   place.name)
+                putExtra(EXTRA_DEST_LAT,    place.lat)
+                putExtra(EXTRA_DEST_LNG,    place.lng)
+                putExtra(EXTRA_ORIGIN_LAT,  originLat)
+                putExtra(EXTRA_ORIGIN_LNG,  originLng)
+                putExtra(EXTRA_ORIGIN_NAME, originName)
+            }
+        )
+    }
+
+    // ── Live status strip ──────────────────────────────────────────────────
+
+    private fun startLiveStatus() {
+        val statusView = findViewById<TextView>(R.id.tv_live_status)
+        val dot        = findViewById<View>(R.id.dot_live)
+
+        // Pulse the live dot
+        ValueAnimator.ofFloat(1f, 0.25f, 1f).apply {
+            duration = 1600
+            repeatCount = ValueAnimator.INFINITE
+            addUpdateListener { dot.alpha = it.animatedValue as Float }
+            start()
+        }
+
+        fun render() {
+            statusView.text = "LIVE — %,d commuters online · %d reports today".format(commuters, reports)
+        }
+        render()
+
+        val tick = object : Runnable {
+            override fun run() {
+                commuters = (commuters + Random.nextInt(-12, 18)).coerceIn(900, 1300)
+                if (Random.nextInt(3) == 0) reports++
+                render()
+                statusHandler.postDelayed(this, 4000)
+            }
+        }
+        statusHandler.postDelayed(tick, 4000)
+    }
+
+    // ── Location ───────────────────────────────────────────────────────────
+
     private var locationListener: LocationListener? = null
 
     @SuppressLint("MissingPermission")
@@ -101,23 +319,14 @@ class DestinationPickerActivity : AppCompatActivity() {
         val hasPermission = ContextCompat.checkSelfPermission(
             this, Manifest.permission.ACCESS_FINE_LOCATION
         ) == PackageManager.PERMISSION_GRANTED
-
-        if (!hasPermission) {
-            setOriginChip(FALLBACK_NAME)
-            return
-        }
+        if (!hasPermission) { setOriginChip(FALLBACK_NAME); return }
 
         val lm = getSystemService(LOCATION_SERVICE) as LocationManager
-
-        // Always request live updates — getLastKnownLocation returns the emulator's
-        // stale Mountain View cache even after you change it in Extended Controls.
-        // requestLocationUpdates catches the fresh event emitted by "Set Location".
         val provider = when {
             lm.isProviderEnabled(LocationManager.GPS_PROVIDER)     -> LocationManager.GPS_PROVIDER
             lm.isProviderEnabled(LocationManager.NETWORK_PROVIDER) -> LocationManager.NETWORK_PROVIDER
             else -> { setOriginChip(FALLBACK_NAME); return }
         }
-
         val listener = object : LocationListener {
             override fun onLocationChanged(loc: Location) {
                 lm.removeUpdates(this)
@@ -128,27 +337,15 @@ class DestinationPickerActivity : AppCompatActivity() {
         locationListener = listener
         lm.requestLocationUpdates(provider, 0L, 0f, listener)
 
-        // Fall back to Yelahanka if no fix arrives within 6 seconds
         lifecycleScope.launch {
             kotlinx.coroutines.delay(6000)
-            if (originLat == FALLBACK_LAT && originLng == FALLBACK_LNG) {
-                setOriginChip(FALLBACK_NAME)
-            }
-        }
-    }
-
-    override fun onDestroy() {
-        super.onDestroy()
-        locationListener?.let {
-            (getSystemService(LOCATION_SERVICE) as LocationManager).removeUpdates(it)
+            if (originLat == FALLBACK_LAT && originLng == FALLBACK_LNG) setOriginChip(FALLBACK_NAME)
         }
     }
 
     private fun applyLocation(location: Location) {
         originLat = location.latitude
         originLng = location.longitude
-
-        // Reverse-geocode on IO thread, update chip on main thread
         lifecycleScope.launch {
             val name = withContext(Dispatchers.IO) { reverseGeocode(location) }
             originName = name
@@ -160,42 +357,91 @@ class DestinationPickerActivity : AppCompatActivity() {
         findViewById<TextView>(R.id.tv_origin_name)?.text = name
     }
 
-    private fun reverseGeocode(location: Location): String {
-        return try {
-            val geocoder = Geocoder(this, Locale.getDefault())
-            @Suppress("DEPRECATION")
-            val addresses = geocoder.getFromLocation(location.latitude, location.longitude, 1)
-            val addr = addresses?.firstOrNull()
-            addr?.subLocality ?: addr?.locality ?: addr?.adminArea ?: FALLBACK_NAME
-        } catch (e: Exception) {
-            FALLBACK_NAME
-        }
-    }
+    private fun reverseGeocode(location: Location): String = try {
+        val geocoder = Geocoder(this, Locale.getDefault())
+        @Suppress("DEPRECATION")
+        val addr = geocoder.getFromLocation(location.latitude, location.longitude, 1)?.firstOrNull()
+        addr?.subLocality ?: addr?.locality ?: addr?.adminArea ?: FALLBACK_NAME
+    } catch (e: Exception) { FALLBACK_NAME }
 
-    private class DestAdapter(
-        private val items: List<Destination>,
-        private val onClick: (Destination) -> Unit,
-    ) : RecyclerView.Adapter<DestAdapter.VH>() {
+    // ── Adapters ───────────────────────────────────────────────────────────
 
-        inner class VH(view: View) : RecyclerView.ViewHolder(view) {
-            val tvEmoji: TextView = view.findViewById(R.id.tv_dest_emoji)
-            val tvName:  TextView = view.findViewById(R.id.tv_dest_name)
-            val tvArea:  TextView = view.findViewById(R.id.tv_dest_area)
-            val tvGoing: TextView = view.findViewById(R.id.tv_dest_going)
-        }
+    /** Grid tile (popular) or horizontal chip (recent), chosen by [recentChip]. */
+    private class PlaceTileAdapter(
+        source: List<Place>,
+        private val recentChip: Boolean = false,
+        private val onClick: (Place) -> Unit,
+    ) : RecyclerView.Adapter<RecyclerView.ViewHolder>() {
 
-        override fun onCreateViewHolder(parent: ViewGroup, viewType: Int): VH =
-            VH(LayoutInflater.from(parent.context).inflate(R.layout.item_destination, parent, false))
+        private var items = source.toList()
+
+        fun submit(newItems: List<Place>) { items = newItems.toList(); notifyDataSetChanged() }
 
         override fun getItemCount() = items.size
 
+        override fun onCreateViewHolder(parent: ViewGroup, viewType: Int): RecyclerView.ViewHolder {
+            val layout = if (recentChip) R.layout.item_recent else R.layout.item_destination
+            val v = LayoutInflater.from(parent.context).inflate(layout, parent, false)
+            return if (recentChip) RecentVH(v) else TileVH(v)
+        }
+
+        override fun onBindViewHolder(holder: RecyclerView.ViewHolder, position: Int) {
+            val p = items[position]
+            if (holder is RecentVH) {
+                holder.emoji.text = p.emoji
+                holder.name.text  = p.name
+                holder.itemView.setOnClickListener { onClick(p) }
+            } else if (holder is TileVH) {
+                holder.emoji.text = p.emoji
+                holder.name.text  = p.name
+                holder.area.text  = p.area
+                holder.going.text = "%,d going".format(p.going)
+                holder.itemView.setOnClickListener { onClick(p) }
+            }
+        }
+
+        class TileVH(v: View) : RecyclerView.ViewHolder(v) {
+            val emoji: TextView = v.findViewById(R.id.tv_dest_emoji)
+            val name:  TextView = v.findViewById(R.id.tv_dest_name)
+            val area:  TextView = v.findViewById(R.id.tv_dest_area)
+            val going: TextView = v.findViewById(R.id.tv_dest_going)
+        }
+
+        class RecentVH(v: View) : RecyclerView.ViewHolder(v) {
+            val emoji: TextView = v.findViewById(R.id.tv_recent_emoji)
+            val name:  TextView = v.findViewById(R.id.tv_recent_name)
+        }
+    }
+
+    /** Vertical search-result rows. */
+    private class SearchResultAdapter(
+        source: List<Place>,
+        private val onClick: (Place) -> Unit,
+    ) : RecyclerView.Adapter<SearchResultAdapter.VH>() {
+
+        private var items = source.toList()
+
+        fun submit(newItems: List<Place>) { items = newItems.toList(); notifyDataSetChanged() }
+
+        override fun getItemCount() = items.size
+
+        override fun onCreateViewHolder(parent: ViewGroup, viewType: Int): VH =
+            VH(LayoutInflater.from(parent.context).inflate(R.layout.item_search_place, parent, false))
+
         override fun onBindViewHolder(holder: VH, position: Int) {
-            val dest = items[position]
-            holder.tvEmoji.text = dest.emoji
-            holder.tvName.text  = dest.name
-            holder.tvArea.text  = dest.area
-            holder.tvGoing.text = "${dest.going} going here"
-            holder.itemView.setOnClickListener { onClick(dest) }
+            val p = items[position]
+            holder.emoji.text = p.emoji
+            holder.name.text  = p.name
+            holder.area.text  = p.area
+            holder.going.text = "%,d".format(p.going)
+            holder.itemView.setOnClickListener { onClick(p) }
+        }
+
+        class VH(v: View) : RecyclerView.ViewHolder(v) {
+            val emoji: TextView = v.findViewById(R.id.tv_sp_emoji)
+            val name:  TextView = v.findViewById(R.id.tv_sp_name)
+            val area:  TextView = v.findViewById(R.id.tv_sp_area)
+            val going: TextView = v.findViewById(R.id.tv_sp_going)
         }
     }
 }
