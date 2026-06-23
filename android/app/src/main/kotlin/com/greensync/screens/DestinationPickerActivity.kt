@@ -93,6 +93,9 @@ class DestinationPickerActivity : AppCompatActivity() {
         fetchLocation()
     }
 
+    // Active listener kept so we can remove it in onDestroy
+    private var locationListener: LocationListener? = null
+
     @SuppressLint("MissingPermission")
     private fun fetchLocation() {
         val hasPermission = ContextCompat.checkSelfPermission(
@@ -106,28 +109,38 @@ class DestinationPickerActivity : AppCompatActivity() {
 
         val lm = getSystemService(LOCATION_SERVICE) as LocationManager
 
-        // Try last known location from any available provider — instant, no callback
-        val bestLast = listOf(LocationManager.GPS_PROVIDER, LocationManager.NETWORK_PROVIDER)
-            .filter { lm.isProviderEnabled(it) }
-            .mapNotNull { lm.getLastKnownLocation(it) }
-            .minByOrNull { it.accuracy }   // prefer most accurate
+        // Always request live updates — getLastKnownLocation returns the emulator's
+        // stale Mountain View cache even after you change it in Extended Controls.
+        // requestLocationUpdates catches the fresh event emitted by "Set Location".
+        val provider = when {
+            lm.isProviderEnabled(LocationManager.GPS_PROVIDER)     -> LocationManager.GPS_PROVIDER
+            lm.isProviderEnabled(LocationManager.NETWORK_PROVIDER) -> LocationManager.NETWORK_PROVIDER
+            else -> { setOriginChip(FALLBACK_NAME); return }
+        }
 
-        if (bestLast != null) {
-            applyLocation(bestLast)
-        } else {
-            // Request a single fresh fix
-            val provider = when {
-                lm.isProviderEnabled(LocationManager.NETWORK_PROVIDER) -> LocationManager.NETWORK_PROVIDER
-                lm.isProviderEnabled(LocationManager.GPS_PROVIDER)     -> LocationManager.GPS_PROVIDER
-                else -> { setOriginChip(FALLBACK_NAME); return }
+        val listener = object : LocationListener {
+            override fun onLocationChanged(loc: Location) {
+                lm.removeUpdates(this)
+                locationListener = null
+                applyLocation(loc)
             }
-            val listener = object : LocationListener {
-                override fun onLocationChanged(loc: Location) {
-                    lm.removeUpdates(this)
-                    applyLocation(loc)
-                }
+        }
+        locationListener = listener
+        lm.requestLocationUpdates(provider, 0L, 0f, listener)
+
+        // Fall back to Yelahanka if no fix arrives within 6 seconds
+        lifecycleScope.launch {
+            kotlinx.coroutines.delay(6000)
+            if (originLat == FALLBACK_LAT && originLng == FALLBACK_LNG) {
+                setOriginChip(FALLBACK_NAME)
             }
-            lm.requestLocationUpdates(provider, 0L, 0f, listener)
+        }
+    }
+
+    override fun onDestroy() {
+        super.onDestroy()
+        locationListener?.let {
+            (getSystemService(LOCATION_SERVICE) as LocationManager).removeUpdates(it)
         }
     }
 
