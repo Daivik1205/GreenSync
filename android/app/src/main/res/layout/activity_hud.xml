@@ -1,183 +1,364 @@
 <?xml version="1.0" encoding="utf-8"?>
-<LinearLayout
+<ScrollView
     xmlns:android="http://schemas.android.com/apk/res/android"
+    xmlns:app="http://schemas.android.com/apk/res-auto"
     android:layout_width="match_parent"
     android:layout_height="match_parent"
-    android:orientation="vertical"
     android:background="@color/surface_dark"
-    android:padding="20dp">
+    android:fillViewport="true">
 
-    <!-- Route label -->
-    <TextView
-        android:id="@+id/tv_route_label"
-        android:layout_width="match_parent"
-        android:layout_height="wrap_content"
-        android:textColor="@color/secondary_text"
-        android:textSize="13sp"
-        android:gravity="center"
-        android:layout_marginTop="8dp" />
-
-    <!-- Congestion level - big central display -->
     <LinearLayout
         android:layout_width="match_parent"
-        android:layout_height="0dp"
-        android:layout_weight="1"
+        android:layout_height="wrap_content"
         android:orientation="vertical"
-        android:gravity="center">
+        android:paddingBottom="24dp">
 
+        <!-- Top bar: back + title -->
+        <LinearLayout
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:orientation="horizontal"
+            android:gravity="center_vertical"
+            android:paddingHorizontal="8dp"
+            android:paddingTop="16dp"
+            android:paddingBottom="12dp">
+
+            <TextView
+                android:id="@+id/btn_back"
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:text="← Back"
+                android:textColor="@color/congestion_low"
+                android:textSize="14sp"
+                android:paddingHorizontal="12dp"
+                android:paddingVertical="8dp"
+                android:background="?attr/selectableItemBackground" />
+
+            <TextView
+                android:id="@+id/tv_hud_title"
+                android:layout_width="0dp"
+                android:layout_height="wrap_content"
+                android:layout_weight="1"
+                android:textColor="@color/white"
+                android:textSize="15sp"
+                android:textStyle="bold"
+                android:gravity="center"
+                android:ellipsize="end"
+                android:maxLines="1"
+                android:paddingEnd="60dp" />
+        </LinearLayout>
+
+        <!-- Route confirmed banner -->
         <TextView
-            android:id="@+id/tv_congestion_icon"
+            android:id="@+id/tv_route_label"
             android:layout_width="wrap_content"
             android:layout_height="wrap_content"
-            android:layout_gravity="center"
-            android:textSize="52sp" />
-
-        <TextView
-            android:id="@+id/tv_congestion_level"
-            android:layout_width="wrap_content"
-            android:layout_height="wrap_content"
-            android:layout_gravity="center"
-            android:layout_marginTop="4dp"
-            android:textSize="36sp"
-            android:textStyle="bold"
-            android:textColor="@color/white" />
-
-        <TextView
-            android:id="@+id/tv_congestion_label"
-            android:layout_width="wrap_content"
-            android:layout_height="wrap_content"
-            android:layout_gravity="center"
-            android:textSize="14sp"
-            android:textColor="@color/secondary_text"
-            android:text="CONGESTION" />
-
-        <TextView
-            android:id="@+id/tv_you_joined"
-            android:layout_width="wrap_content"
-            android:layout_height="wrap_content"
-            android:layout_gravity="center"
-            android:layout_marginTop="16dp"
+            android:layout_gravity="center_horizontal"
+            android:layout_marginBottom="16dp"
             android:paddingHorizontal="16dp"
-            android:paddingVertical="8dp"
-            android:background="#1F1F1F"
-            android:textSize="14sp"
-            android:textColor="@color/secondary_text" />
+            android:paddingVertical="6dp"
+            android:textColor="@color/white"
+            android:textSize="13sp"
+            android:textStyle="bold"
+            android:background="@drawable/badge_rounded" />
+
+        <!-- 3 stat cards -->
+        <LinearLayout
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:orientation="horizontal"
+            android:paddingHorizontal="12dp"
+            android:gravity="center">
+
+            <!-- ETA card -->
+            <com.google.android.material.card.MaterialCardView
+                android:layout_width="0dp"
+                android:layout_height="wrap_content"
+                android:layout_weight="1"
+                android:layout_marginHorizontal="4dp"
+                app:cardBackgroundColor="@color/surface_card"
+                app:cardCornerRadius="12dp"
+                app:cardElevation="4dp">
+
+                <LinearLayout
+                    android:layout_width="match_parent"
+                    android:layout_height="wrap_content"
+                    android:orientation="vertical"
+                    android:gravity="center"
+                    android:padding="16dp">
+
+                    <TextView
+                        android:layout_width="wrap_content"
+                        android:layout_height="wrap_content"
+                        android:text="ETA"
+                        android:textColor="@color/hint_text"
+                        android:textSize="10sp"
+                        android:letterSpacing="0.1" />
+
+                    <TextView
+                        android:id="@+id/tv_stat_eta"
+                        android:layout_width="wrap_content"
+                        android:layout_height="wrap_content"
+                        android:textColor="@color/white"
+                        android:textSize="30sp"
+                        android:textStyle="bold"
+                        android:layout_marginTop="4dp" />
+
+                    <TextView
+                        android:layout_width="wrap_content"
+                        android:layout_height="wrap_content"
+                        android:text="min"
+                        android:textColor="@color/secondary_text"
+                        android:textSize="11sp" />
+                </LinearLayout>
+            </com.google.android.material.card.MaterialCardView>
+
+            <!-- Speed card -->
+            <com.google.android.material.card.MaterialCardView
+                android:layout_width="0dp"
+                android:layout_height="wrap_content"
+                android:layout_weight="1"
+                android:layout_marginHorizontal="4dp"
+                app:cardBackgroundColor="@color/surface_card"
+                app:cardCornerRadius="12dp"
+                app:cardElevation="4dp">
+
+                <LinearLayout
+                    android:layout_width="match_parent"
+                    android:layout_height="wrap_content"
+                    android:orientation="vertical"
+                    android:gravity="center"
+                    android:padding="16dp">
+
+                    <TextView
+                        android:layout_width="wrap_content"
+                        android:layout_height="wrap_content"
+                        android:text="AVG SPEED"
+                        android:textColor="@color/hint_text"
+                        android:textSize="10sp"
+                        android:letterSpacing="0.1" />
+
+                    <TextView
+                        android:id="@+id/tv_stat_speed"
+                        android:layout_width="wrap_content"
+                        android:layout_height="wrap_content"
+                        android:textSize="30sp"
+                        android:textStyle="bold"
+                        android:layout_marginTop="4dp" />
+
+                    <TextView
+                        android:layout_width="wrap_content"
+                        android:layout_height="wrap_content"
+                        android:text="km/h"
+                        android:textColor="@color/secondary_text"
+                        android:textSize="11sp" />
+                </LinearLayout>
+            </com.google.android.material.card.MaterialCardView>
+
+            <!-- Distance card -->
+            <com.google.android.material.card.MaterialCardView
+                android:layout_width="0dp"
+                android:layout_height="wrap_content"
+                android:layout_weight="1"
+                android:layout_marginHorizontal="4dp"
+                app:cardBackgroundColor="@color/surface_card"
+                app:cardCornerRadius="12dp"
+                app:cardElevation="4dp">
+
+                <LinearLayout
+                    android:layout_width="match_parent"
+                    android:layout_height="wrap_content"
+                    android:orientation="vertical"
+                    android:gravity="center"
+                    android:padding="16dp">
+
+                    <TextView
+                        android:layout_width="wrap_content"
+                        android:layout_height="wrap_content"
+                        android:text="DISTANCE"
+                        android:textColor="@color/hint_text"
+                        android:textSize="10sp"
+                        android:letterSpacing="0.1" />
+
+                    <TextView
+                        android:id="@+id/tv_stat_distance"
+                        android:layout_width="wrap_content"
+                        android:layout_height="wrap_content"
+                        android:textColor="@color/white"
+                        android:textSize="30sp"
+                        android:textStyle="bold"
+                        android:layout_marginTop="4dp" />
+
+                    <TextView
+                        android:layout_width="wrap_content"
+                        android:layout_height="wrap_content"
+                        android:text="km"
+                        android:textColor="@color/secondary_text"
+                        android:textSize="11sp" />
+                </LinearLayout>
+            </com.google.android.material.card.MaterialCardView>
+
+        </LinearLayout>
+
+        <!-- Congestion block -->
+        <LinearLayout
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:orientation="vertical"
+            android:gravity="center"
+            android:paddingVertical="24dp">
+
+            <TextView
+                android:id="@+id/tv_congestion_icon"
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:textSize="48sp" />
+
+            <TextView
+                android:id="@+id/tv_congestion_level"
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:layout_marginTop="4dp"
+                android:textSize="28sp"
+                android:textStyle="bold" />
+
+            <TextView
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:text="CONGESTION"
+                android:textColor="@color/hint_text"
+                android:textSize="11sp"
+                android:letterSpacing="0.1" />
+
+            <TextView
+                android:id="@+id/tv_you_joined"
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:layout_marginTop="12dp"
+                android:paddingHorizontal="16dp"
+                android:paddingVertical="8dp"
+                android:background="#1E1E1E"
+                android:textSize="13sp"
+                android:textColor="@color/secondary_text" />
+        </LinearLayout>
+
+        <!-- Divider -->
+        <View
+            android:layout_width="match_parent"
+            android:layout_height="1dp"
+            android:background="#2A2A2A"
+            android:layout_marginHorizontal="16dp"
+            android:layout_marginBottom="16dp" />
+
+        <!-- Route comparison -->
+        <TextView
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:text="ROUTE COMPARISON"
+            android:textColor="@color/hint_text"
+            android:textSize="11sp"
+            android:letterSpacing="0.12"
+            android:paddingHorizontal="16dp"
+            android:layout_marginBottom="12dp" />
+
+        <LinearLayout
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:orientation="horizontal"
+            android:gravity="center_vertical"
+            android:paddingHorizontal="16dp"
+            android:layout_marginBottom="8dp">
+
+            <TextView
+                android:id="@+id/tv_cmp_label_0"
+                android:layout_width="64dp"
+                android:layout_height="wrap_content"
+                android:textColor="@color/secondary_text"
+                android:textSize="12sp" />
+
+            <ProgressBar
+                android:id="@+id/pb_cmp_0"
+                style="@style/Widget.AppCompat.ProgressBar.Horizontal"
+                android:layout_width="0dp"
+                android:layout_height="8dp"
+                android:layout_weight="1"
+                android:layout_marginHorizontal="8dp"
+                android:max="100" />
+
+            <TextView
+                android:id="@+id/tv_cmp_count_0"
+                android:layout_width="90dp"
+                android:layout_height="wrap_content"
+                android:textColor="@color/secondary_text"
+                android:textSize="12sp"
+                android:gravity="end" />
+        </LinearLayout>
+
+        <LinearLayout
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:orientation="horizontal"
+            android:gravity="center_vertical"
+            android:paddingHorizontal="16dp"
+            android:layout_marginBottom="8dp">
+
+            <TextView
+                android:id="@+id/tv_cmp_label_1"
+                android:layout_width="64dp"
+                android:layout_height="wrap_content"
+                android:textColor="@color/secondary_text"
+                android:textSize="12sp" />
+
+            <ProgressBar
+                android:id="@+id/pb_cmp_1"
+                style="@style/Widget.AppCompat.ProgressBar.Horizontal"
+                android:layout_width="0dp"
+                android:layout_height="8dp"
+                android:layout_weight="1"
+                android:layout_marginHorizontal="8dp"
+                android:max="100" />
+
+            <TextView
+                android:id="@+id/tv_cmp_count_1"
+                android:layout_width="90dp"
+                android:layout_height="wrap_content"
+                android:textColor="@color/secondary_text"
+                android:textSize="12sp"
+                android:gravity="end" />
+        </LinearLayout>
+
+        <LinearLayout
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:orientation="horizontal"
+            android:gravity="center_vertical"
+            android:paddingHorizontal="16dp"
+            android:layout_marginBottom="8dp">
+
+            <TextView
+                android:id="@+id/tv_cmp_label_2"
+                android:layout_width="64dp"
+                android:layout_height="wrap_content"
+                android:textColor="@color/secondary_text"
+                android:textSize="12sp" />
+
+            <ProgressBar
+                android:id="@+id/pb_cmp_2"
+                style="@style/Widget.AppCompat.ProgressBar.Horizontal"
+                android:layout_width="0dp"
+                android:layout_height="8dp"
+                android:layout_weight="1"
+                android:layout_marginHorizontal="8dp"
+                android:max="100" />
+
+            <TextView
+                android:id="@+id/tv_cmp_count_2"
+                android:layout_width="90dp"
+                android:layout_height="wrap_content"
+                android:textColor="@color/secondary_text"
+                android:textSize="12sp"
+                android:gravity="end" />
+        </LinearLayout>
+
     </LinearLayout>
-
-    <!-- Divider -->
-    <View
-        android:layout_width="match_parent"
-        android:layout_height="1dp"
-        android:background="#2A2A2A"
-        android:layout_marginBottom="16dp" />
-
-    <!-- Route comparison -->
-    <TextView
-        android:layout_width="match_parent"
-        android:layout_height="wrap_content"
-        android:text="ROUTE COMPARISON"
-        android:textColor="@color/hint_text"
-        android:textSize="11sp"
-        android:letterSpacing="0.12"
-        android:layout_marginBottom="12dp" />
-
-    <LinearLayout
-        android:id="@+id/ll_route_0"
-        android:layout_width="match_parent"
-        android:layout_height="wrap_content"
-        android:orientation="horizontal"
-        android:gravity="center_vertical"
-        android:layout_marginBottom="8dp">
-
-        <TextView
-            android:id="@+id/tv_cmp_label_0"
-            android:layout_width="60dp"
-            android:layout_height="wrap_content"
-            android:textColor="@color/secondary_text"
-            android:textSize="12sp" />
-
-        <ProgressBar
-            android:id="@+id/pb_cmp_0"
-            style="@style/Widget.AppCompat.ProgressBar.Horizontal"
-            android:layout_width="0dp"
-            android:layout_height="8dp"
-            android:layout_weight="1"
-            android:layout_marginHorizontal="8dp"
-            android:max="100" />
-
-        <TextView
-            android:id="@+id/tv_cmp_count_0"
-            android:layout_width="80dp"
-            android:layout_height="wrap_content"
-            android:textColor="@color/secondary_text"
-            android:textSize="12sp"
-            android:gravity="end" />
-    </LinearLayout>
-
-    <LinearLayout
-        android:id="@+id/ll_route_1"
-        android:layout_width="match_parent"
-        android:layout_height="wrap_content"
-        android:orientation="horizontal"
-        android:gravity="center_vertical"
-        android:layout_marginBottom="8dp">
-
-        <TextView
-            android:id="@+id/tv_cmp_label_1"
-            android:layout_width="60dp"
-            android:layout_height="wrap_content"
-            android:textColor="@color/secondary_text"
-            android:textSize="12sp" />
-
-        <ProgressBar
-            android:id="@+id/pb_cmp_1"
-            style="@style/Widget.AppCompat.ProgressBar.Horizontal"
-            android:layout_width="0dp"
-            android:layout_height="8dp"
-            android:layout_weight="1"
-            android:layout_marginHorizontal="8dp"
-            android:max="100" />
-
-        <TextView
-            android:id="@+id/tv_cmp_count_1"
-            android:layout_width="80dp"
-            android:layout_height="wrap_content"
-            android:textColor="@color/secondary_text"
-            android:textSize="12sp"
-            android:gravity="end" />
-    </LinearLayout>
-
-    <LinearLayout
-        android:id="@+id/ll_route_2"
-        android:layout_width="match_parent"
-        android:layout_height="wrap_content"
-        android:orientation="horizontal"
-        android:gravity="center_vertical"
-        android:layout_marginBottom="16dp">
-
-        <TextView
-            android:id="@+id/tv_cmp_label_2"
-            android:layout_width="60dp"
-            android:layout_height="wrap_content"
-            android:textColor="@color/secondary_text"
-            android:textSize="12sp" />
-
-        <ProgressBar
-            android:id="@+id/pb_cmp_2"
-            style="@style/Widget.AppCompat.ProgressBar.Horizontal"
-            android:layout_width="0dp"
-            android:layout_height="8dp"
-            android:layout_weight="1"
-            android:layout_marginHorizontal="8dp"
-            android:max="100" />
-
-        <TextView
-            android:id="@+id/tv_cmp_count_2"
-            android:layout_width="80dp"
-            android:layout_height="wrap_content"
-            android:textColor="@color/secondary_text"
-            android:textSize="12sp"
-            android:gravity="end" />
-    </LinearLayout>
-
-</LinearLayout>
+</ScrollView>

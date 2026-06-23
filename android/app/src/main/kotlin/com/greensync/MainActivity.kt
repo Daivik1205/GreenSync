@@ -7,7 +7,7 @@ import android.os.Bundle
 import androidx.appcompat.app.AppCompatActivity
 import androidx.core.app.ActivityCompat
 import androidx.core.content.ContextCompat
-import com.greensync.screens.RouteSelectionActivity
+import com.greensync.screens.DestinationPickerActivity
 import com.greensync.services.EcuTelemetryService
 import com.greensync.services.MqttIntentService
 
@@ -53,7 +53,7 @@ class MainActivity : AppCompatActivity() {
         startService(Intent(this, MqttIntentService::class.java))
         startService(Intent(this, EcuTelemetryService::class.java))
 
-        startActivity(Intent(this, RouteSelectionActivity::class.java))
+        startActivity(Intent(this, DestinationPickerActivity::class.java))
         finish()
     }
 

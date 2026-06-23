@@ -28,6 +28,10 @@
         </activity>
 
         <activity
+            android:name=".screens.DestinationPickerActivity"
+            android:exported="false" />
+
+        <activity
             android:name=".screens.RouteSelectionActivity"
             android:exported="false" />
 

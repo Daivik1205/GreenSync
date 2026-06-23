@@ -1,5 +1,6 @@
 package com.greensync.screens
 
+import android.content.res.ColorStateList
 import android.graphics.Color
 import android.os.Bundle
 import android.view.LayoutInflater
@@ -16,6 +17,9 @@ import androidx.recyclerview.widget.RecyclerView
 import com.greensync.R
 import com.greensync.models.LatLng
 import com.greensync.models.Route
+import com.greensync.screens.DestinationPickerActivity.Companion.EXTRA_DEST_LAT
+import com.greensync.screens.DestinationPickerActivity.Companion.EXTRA_DEST_LNG
+import com.greensync.screens.DestinationPickerActivity.Companion.EXTRA_DEST_NAME
 import com.greensync.viewmodels.RouteUiState
 import com.greensync.viewmodels.RouteViewModel
 import kotlinx.coroutines.flow.collectLatest
@@ -30,10 +34,8 @@ import org.osmdroid.views.overlay.Polyline
 class RouteSelectionActivity : AppCompatActivity() {
 
     companion object {
-        val ORIGIN      = LatLng(13.1007, 77.5963)
-        val DESTINATION = LatLng(12.9121, 77.5590)
+        val ORIGIN = LatLng(13.1007, 77.5963)
 
-        // Mock crowd data — users currently on each route (by index)
         val MOCK_USER_COUNTS = intArrayOf(312, 89, 641)
 
         fun congestionLabel(count: Int) = when {
@@ -58,6 +60,18 @@ class RouteSelectionActivity : AppCompatActivity() {
             val max = MOCK_USER_COUNTS.max()
             return ((count.toFloat() / max) * 100).toInt()
         }
+
+        fun adjustedEta(rawMin: Double, count: Int): Int = (rawMin * when {
+            count > 500 -> 1.8
+            count > 150 -> 1.3
+            else        -> 1.0
+        }).toInt()
+
+        fun expectedSpeed(count: Int) = when {
+            count > 500 -> 16
+            count > 150 -> 28
+            else        -> 45
+        }
     }
 
     private val viewModel: RouteViewModel by viewModels()
@@ -65,10 +79,22 @@ class RouteSelectionActivity : AppCompatActivity() {
     private lateinit var adapter: RouteAdapter
     private var currentRoutes: List<Route> = emptyList()
 
+    private lateinit var destName: String
+    private lateinit var destination: LatLng
+
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
         Configuration.getInstance().userAgentValue = packageName
         setContentView(R.layout.activity_route_selection)
+
+        destName    = intent.getStringExtra(EXTRA_DEST_NAME) ?: "Destination"
+        val destLat = intent.getDoubleExtra(EXTRA_DEST_LAT, 12.9121)
+        val destLng = intent.getDoubleExtra(EXTRA_DEST_LNG, 77.5590)
+        destination = LatLng(destLat, destLng)
+
+        // Header: "Yelahanka → Office"
+        findViewById<TextView>(R.id.tv_route_header).text =
+            "Yelahanka  →  $destName"
 
         mapView = findViewById(R.id.map_view)
         mapView.setTileSource(TileSourceFactory.MAPNIK)
@@ -79,13 +105,15 @@ class RouteSelectionActivity : AppCompatActivity() {
         val totalUsers = MOCK_USER_COUNTS.sum()
         findViewById<TextView>(R.id.tv_total_users).text = "$totalUsers users tracked"
 
-        adapter = RouteAdapter(emptyList()) { route, index -> onRouteSelected(route, index) }
+        adapter = RouteAdapter(emptyList(), destName) { route, index ->
+            onRouteSelected(route, index)
+        }
         val rv = findViewById<RecyclerView>(R.id.rv_routes)
         rv.layoutManager = LinearLayoutManager(this)
         rv.adapter = adapter
 
         observeViewModel()
-        viewModel.fetchRoutes(ORIGIN, DESTINATION)
+        viewModel.fetchRoutes(ORIGIN, destination)
     }
 
     override fun onResume() { super.onResume(); mapView.onResume() }
@@ -120,7 +148,6 @@ class RouteSelectionActivity : AppCompatActivity() {
         routes.forEachIndexed { i, route ->
             val count = MOCK_USER_COUNTS.getOrElse(i) { 100 }
             val color = congestionColor(count)
-            // Width proportional to user count: busier = thicker
             val width = when {
                 count > 500 -> 16f
                 count > 150 -> 10f
@@ -150,15 +177,21 @@ class RouteSelectionActivity : AppCompatActivity() {
 
     private fun onRouteSelected(route: Route, index: Int) {
         val userCount = MOCK_USER_COUNTS.getOrElse(index) { 100 }
+        val eta       = adjustedEta(route.durationMin, userCount)
+        val speed     = expectedSpeed(userCount)
         viewModel.selectRoute(route)
         startActivity(
             HUDActivity.newIntent(
-                context      = this,
-                routeId      = route.id,
-                summary      = route.summary,
-                selectedIdx  = index,
-                userCount    = userCount,
-                allCounts    = MOCK_USER_COUNTS,
+                context     = this,
+                routeId     = route.id,
+                summary     = route.summary,
+                selectedIdx = index,
+                userCount   = userCount,
+                allCounts   = MOCK_USER_COUNTS,
+                destName    = destName,
+                adjustedEta = eta,
+                speed       = speed,
+                distanceKm  = route.distanceKm,
             )
         )
     }
@@ -168,21 +201,23 @@ class RouteSelectionActivity : AppCompatActivity() {
             if (show) View.VISIBLE else View.GONE
     }
 
-    // ── Adapter ───────────────────────────────────────────────────────────────
-
     private class RouteAdapter(
         private var routes: List<Route>,
+        private val destName: String,
         private val onClick: (Route, Int) -> Unit,
     ) : RecyclerView.Adapter<RouteAdapter.VH>() {
 
         inner class VH(view: View) : RecyclerView.ViewHolder(view) {
-            val strip:    View        = view.findViewById(R.id.congestion_strip)
-            val tvLabel:  TextView    = view.findViewById(R.id.tv_route_label)
-            val tvBadge:  TextView    = view.findViewById(R.id.tv_congestion_badge)
-            val tvDetails:TextView    = view.findViewById(R.id.tv_details)
-            val tvSummary:TextView    = view.findViewById(R.id.tv_summary)
-            val tvUsers:  TextView    = view.findViewById(R.id.tv_user_count)
-            val pbBar:    ProgressBar = view.findViewById(R.id.pb_congestion)
+            val strip:       View        = view.findViewById(R.id.congestion_strip)
+            val tvLabel:     TextView    = view.findViewById(R.id.tv_route_label)
+            val tvBadge:     TextView    = view.findViewById(R.id.tv_congestion_badge)
+            val tvRecommend: TextView    = view.findViewById(R.id.tv_recommended)
+            val tvEta:       TextView    = view.findViewById(R.id.tv_eta)
+            val tvSpeed:     TextView    = view.findViewById(R.id.tv_speed)
+            val tvDetails:   TextView    = view.findViewById(R.id.tv_details)
+            val tvSummary:   TextView    = view.findViewById(R.id.tv_summary)
+            val tvUsers:     TextView    = view.findViewById(R.id.tv_user_count)
+            val pbBar:       ProgressBar = view.findViewById(R.id.pb_congestion)
         }
 
         override fun onCreateViewHolder(parent: ViewGroup, viewType: Int): VH =
@@ -196,18 +231,28 @@ class RouteSelectionActivity : AppCompatActivity() {
             val color = congestionColor(count)
             val label = congestionLabel(count)
             val icon  = congestionIcon(count)
+            val eta   = adjustedEta(route.durationMin, count)
+            val speed = expectedSpeed(count)
+
+            // Is this the least-congested (recommended) route?
+            val bestIdx = MOCK_USER_COUNTS.indices.minByOrNull { MOCK_USER_COUNTS[it] } ?: -1
+            val isRecommended = position == bestIdx
 
             holder.strip.setBackgroundColor(color)
-            holder.tvLabel.text   = "Route ${position + 1}"
-            holder.tvBadge.text   = "$icon  $label"
-            holder.tvBadge.backgroundTintList =
-                android.content.res.ColorStateList.valueOf(color)
-            holder.tvDetails.text = "%.0f min  ·  %.1f km".format(route.durationMin, route.distanceKm)
+            holder.tvLabel.text = "Route ${position + 1}"
+            holder.tvBadge.text = "$icon  $label"
+            holder.tvBadge.backgroundTintList = ColorStateList.valueOf(color)
+
+            holder.tvRecommend.visibility = if (isRecommended) View.VISIBLE else View.GONE
+
+            holder.tvEta.text   = "~$eta min"
+            holder.tvSpeed.text = "~$speed km/h avg"
+
+            holder.tvDetails.text = "%.1f km  ·  ~%.0f min base".format(route.distanceKm, route.durationMin)
             holder.tvSummary.text = route.summary.ifBlank { "Route ${position + 1}" }
-            holder.tvUsers.text   = "👥 $count users on this route"
+            holder.tvUsers.text   = "👥 $count users  "
             holder.pbBar.progress = congestionProgress(count)
-            holder.pbBar.progressTintList =
-                android.content.res.ColorStateList.valueOf(color)
+            holder.pbBar.progressTintList = ColorStateList.valueOf(color)
 
             holder.itemView.setOnClickListener { onClick(route, position) }
         }
