@@ -73,6 +73,7 @@ class HUDActivity : AppCompatActivity() {
         registerReceiver(
             mqttReceiver,
             IntentFilter("com.greensync.MQTT_MESSAGE"),
+            RECEIVER_NOT_EXPORTED,
         )
     }
 

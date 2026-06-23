@@ -46,6 +46,7 @@ class HUDCarScreen(
                 carContext.registerReceiver(
                     mqttReceiver,
                     IntentFilter("com.greensync.MQTT_MESSAGE"),
+                    Context.RECEIVER_NOT_EXPORTED,
                 )
             }
 
