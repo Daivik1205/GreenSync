@@ -39,3 +39,8 @@ env/
 # Environment
 .env
 .env.local
+
+# Android — machine-specific, never commit
+android/local.properties
+android/.gradle/
+android/app/.gradle/
