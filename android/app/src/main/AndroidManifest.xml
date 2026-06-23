@@ -12,7 +12,7 @@
     <application
         android:name=".GreenSyncApp"
         android:label="GreenSync"
-        android:icon="@mipmap/ic_launcher"
+        android:icon="@drawable/ic_launcher"
         android:theme="@style/Theme.GreenSync"
         android:allowBackup="true">
 

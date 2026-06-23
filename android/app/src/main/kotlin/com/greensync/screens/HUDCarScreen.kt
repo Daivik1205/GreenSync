@@ -9,6 +9,8 @@ import androidx.car.app.Screen
 import androidx.car.app.model.Action
 import androidx.car.app.model.MessageTemplate
 import androidx.car.app.model.Template
+import androidx.lifecycle.DefaultLifecycleObserver
+import androidx.lifecycle.LifecycleOwner
 import com.google.gson.Gson
 import com.greensync.models.Route
 
@@ -39,10 +41,18 @@ class HUDCarScreen(
     }
 
     init {
-        carContext.registerReceiver(
-            mqttReceiver,
-            IntentFilter("com.greensync.MQTT_MESSAGE"),
-        )
+        lifecycle.addObserver(object : DefaultLifecycleObserver {
+            override fun onStart(owner: LifecycleOwner) {
+                carContext.registerReceiver(
+                    mqttReceiver,
+                    IntentFilter("com.greensync.MQTT_MESSAGE"),
+                )
+            }
+
+            override fun onStop(owner: LifecycleOwner) {
+                runCatching { carContext.unregisterReceiver(mqttReceiver) }
+            }
+        })
     }
 
     override fun onGetTemplate(): Template {
@@ -62,13 +72,6 @@ class HUDCarScreen(
                     .build()
             )
             .build()
-    }
-
-    // ── Lifecycle ─────────────────────────────────────────────────────────────
-
-    override fun onStop() {
-        super.onStop()
-        runCatching { carContext.unregisterReceiver(mqttReceiver) }
     }
 
     // ── MQTT ─────────────────────────────────────────────────────────────────
