@@ -84,8 +84,8 @@ class VehicleActivity : AppCompatActivity() {
         setContentView(R.layout.activity_vehicle)
 
         connected = cpmHelper.available
-        profile   = if (Random.nextInt(3) == 0) evFleet.random() else iceFleet.random()
-        // A connected car reports its real make/model; mock just shows our pick.
+        // Hardcoded to the user's vehicle.
+        profile   = Profile("Hyundai i20", isEv = false, tankOrKwh = 37.0, effic = 11.9)
 
         findViewById<TextView>(R.id.btn_back).setOnClickListener { finish() }
         setupStaticUi()
@@ -149,7 +149,7 @@ class VehicleActivity : AppCompatActivity() {
         }
     }
 
-    /** One simulation/read step. */
+    /** One step — only speed and RPM move; the rest are hardcoded i20 values. */
     private fun tick() {
         // Speed priority: AAOS ECU → real phone GPS (when projected to a car) → demo.
         speed = when {
@@ -158,21 +158,9 @@ class VehicleActivity : AppCompatActivity() {
             else -> nextMockSpeed()
         }
 
-        // RPM tracks speed (idle ~820, ~ +85 per km/h, capped).
-        rpm = if (speed < 1) 800 + Random.nextInt(60) else (900 + speed * 85).roundToInt().coerceAtMost(6200)
-
-        // Fuel / battery slowly deplete with use; real value overrides when present.
-        if (profile.isEv) {
-            batteryPct = (cpmHelper.batteryPct()?.times(100)?.toDouble()
-                ?: (batteryPct - speed / 4000.0)).coerceIn(2.0, 100.0)
-        } else {
-            fuelPct = (cpmHelper.fuelPct()?.times(100)?.toDouble()
-                ?: (fuelPct - speed / 6000.0)).coerceIn(1.0, 100.0)
-        }
-
-        coolantC   = (86 + (speed / 12).toInt()).coerceIn(80, 104)
-        odometerKm += if (speed > 0) ((speed / 3600.0) * 1000).roundToInt().coerceAtLeast(0) else 0
-        streamCount++
+        // Random RPM that tracks speed (idle when stopped).
+        rpm = if (speed < 1) 780 + Random.nextInt(170)
+              else (1100 + (speed * 22).roundToInt() + Random.nextInt(-120, 220)).coerceIn(900, 4200)
     }
 
     private var cruising = 0
@@ -188,32 +176,18 @@ class VehicleActivity : AppCompatActivity() {
     }
 
     private fun render() {
+        // Speed is live; everything else is hardcoded for the i20.
         findViewById<TextView>(R.id.tv_veh_speed).text = speed.roundToInt().toString()
         findViewById<ProgressBar>(R.id.pb_veh_speed).setProgress(speed.roundToInt().coerceIn(0, 160), true)
 
-        // Range = remaining energy fraction × usable tank/pack × efficiency.
-        val frac  = if (profile.isEv) batteryPct / 100.0 else fuelPct / 100.0
-        val range = (frac * profile.tankOrKwh * profile.effic).roundToInt()
-        val litres = frac * profile.tankOrKwh
-
-        setCell(R.id.tv_fuel,
-            if (profile.isEv) "${batteryPct.roundToInt()}%" else "%.0f%%".format(fuelPct),
-            warn = frac < 0.15)
-        setCell(R.id.tv_range, "$range km", warn = range < 40)
-        setCell(R.id.tv_mileage,
-            if (profile.isEv) "%.1f km/kWh".format(profile.effic) else "%.1f km/l".format(profile.effic))
-        setCell(R.id.tv_battery, if (profile.isEv) "${batteryPct.roundToInt()}%" else "n/a (ICE)")
-        setCell(R.id.tv_rpm, "%,d".format(rpm))
-        setCell(R.id.tv_gear, gearFor(speed))
-        setCell(R.id.tv_coolant, "$coolantC°C", warn = coolantC > 100)
-        setCell(R.id.tv_odo, "%,d km".format(odometerKm))
-
-        // Petrol cell label already says "petrol left"; for EV repurpose value text.
-        if (profile.isEv) {
-            setCell(R.id.tv_fuel, "${batteryPct.roundToInt()}%", warn = batteryPct < 15)
-        } else {
-            setCell(R.id.tv_fuel, "%.0f%% · %.0f L".format(fuelPct, litres), warn = fuelPct < 12)
-        }
+        setCell(R.id.tv_fuel,    "74%")
+        setCell(R.id.tv_range,   "410 km")
+        setCell(R.id.tv_mileage, "11.9 km/L")
+        setCell(R.id.tv_battery, "n/a (ICE)")
+        setCell(R.id.tv_rpm,     "%,d".format(rpm))
+        setCell(R.id.tv_gear,    "D")
+        setCell(R.id.tv_coolant, "89°C")
+        setCell(R.id.tv_odo,     "55,391 km")
     }
 
     private fun gearFor(s: Double): String = when {
