@@ -17,15 +17,20 @@
         android:theme="@style/Theme.GreenSync"
         android:allowBackup="true">
 
-        <!-- Phone entry point -->
+        <!-- Phone entry point — introduction / home screen -->
         <activity
-            android:name=".MainActivity"
+            android:name=".screens.IntroActivity"
             android:exported="true">
             <intent-filter>
                 <action android:name="android.intent.action.MAIN" />
                 <category android:name="android.intent.category.LAUNCHER" />
             </intent-filter>
         </activity>
+
+        <!-- Permission + service bootstrap, then destination picker -->
+        <activity
+            android:name=".MainActivity"
+            android:exported="false" />
 
         <activity
             android:name=".screens.DestinationPickerActivity"

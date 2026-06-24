@@ -82,9 +82,27 @@ class HUDActivity : AppCompatActivity() {
 
     private lateinit var hudMap: MapView
 
-    // Signal state
-    private var signalSeconds = Random.nextInt(10, 45)
-    private var isGreen       = Random.nextBoolean()
+    // Live route comparison
+    private var selectedIdx   = 0
+    private var selectedColor = 0
+    private lateinit var cmpCountsLive: IntArray
+    private lateinit var cmpLabels: Array<TextView>
+    private lateinit var cmpBars:   Array<ProgressBar>
+    private lateinit var cmpCountViews: Array<TextView>
+
+    // Signals along the chosen route
+    private data class RoadSignal(
+        val name:    String,
+        val posKm:   Double,
+        val green:   Int,      // green phase length (s)
+        val red:     Int,      // red phase length (s)
+        val offset:  Int,      // phase offset (s) — how green-wave aligned it is
+        val synced:  Boolean,  // GreenSync has synced this junction into the wave
+    )
+    private val routeSignals = mutableListOf<RoadSignal>()
+    private var traveledKm = 0.0
+    private var cruiseSpeed = 30
+    private var simClock    = 0   // seconds since arriving on route
 
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
@@ -140,43 +158,17 @@ class HUDActivity : AppCompatActivity() {
         findViewById<TextView>(R.id.tv_you_joined).text =
             "You + ${updatedCount - 1} others on this route"
 
-        // Route comparison
-        val cmpLabels = arrayOf(
-            findViewById<TextView>(R.id.tv_cmp_label_0),
-            findViewById(R.id.tv_cmp_label_1),
-            findViewById<TextView>(R.id.tv_cmp_label_2),
-        )
-        val cmpBars = arrayOf(
-            findViewById<ProgressBar>(R.id.pb_cmp_0),
-            findViewById(R.id.pb_cmp_1),
-            findViewById<ProgressBar>(R.id.pb_cmp_2),
-        )
-        val cmpCounts = arrayOf(
-            findViewById<TextView>(R.id.tv_cmp_count_0),
-            findViewById(R.id.tv_cmp_count_1),
-            findViewById<TextView>(R.id.tv_cmp_count_2),
-        )
-        allCounts.forEachIndexed { i, count ->
-            val c      = if (i == selectedIdx) updatedCount else count
-            val cColor = congestionColor(c)
-            val spd    = expectedSpeed(c)
-            cmpLabels[i].text = "Route ${i + 1}"
-            cmpBars[i].progress = congestionProgress(c)
-            cmpBars[i].progressTintList = ColorStateList.valueOf(cColor)
-            cmpCounts[i].text = "${congestionIcon(c)} $c  ·  ~$spd km/h"
-            cmpCounts[i].setTextColor(cColor)
-            if (i == selectedIdx) {
-                cmpLabels[i].setTextColor(color)
-                cmpLabels[i].textSize = 13f
-            }
-        }
+        // Route comparison — kept live (counts drift as commuters commit/leave)
+        this.selectedIdx   = selectedIdx
+        this.selectedColor = color
+        setupLiveComparison(allCounts, updatedCount)
 
         // Community report buttons
         val totalActive = allCounts.sum() + 1
         setupReportButtons(totalActive)
 
-        // V2I signal countdown
-        startSignalCountdown()
+        // V2I next-red-light advisory along the chosen route
+        startSignalAdvisory(distance, if (speed > 0) speed else expectedSpeed(updatedCount), destName)
 
         // SUMO digital-twin savings (your route vs the busiest static baseline)
         renderRouteSavings(updatedCount, allCounts, eta, speed, distance)
@@ -313,32 +305,171 @@ class HUDActivity : AppCompatActivity() {
         if (::hudMap.isInitialized) hudMap.onPause()
     }
 
-    private fun startSignalCountdown() {
-        updateSignalUi()
+    // ── Live route comparison ────────────────────────────────────────────────
+
+    private fun setupLiveComparison(allCounts: IntArray, updatedCount: Int) {
+        cmpLabels = arrayOf(
+            findViewById(R.id.tv_cmp_label_0),
+            findViewById(R.id.tv_cmp_label_1),
+            findViewById(R.id.tv_cmp_label_2),
+        )
+        cmpBars = arrayOf(
+            findViewById(R.id.pb_cmp_0),
+            findViewById(R.id.pb_cmp_1),
+            findViewById(R.id.pb_cmp_2),
+        )
+        cmpCountViews = arrayOf(
+            findViewById(R.id.tv_cmp_count_0),
+            findViewById(R.id.tv_cmp_count_1),
+            findViewById(R.id.tv_cmp_count_2),
+        )
+        // Seed live counts: your route reflects you having joined it.
+        cmpCountsLive = IntArray(cmpLabels.size) {
+            if (it == selectedIdx) updatedCount else allCounts.getOrElse(it) { 100 }
+        }
+        renderComparison()
+
+        // Counts drift every ~2.5s as commuters commit to / leave each route.
         lifecycleScope.launch {
             while (true) {
-                delay(1000)
-                signalSeconds--
-                if (signalSeconds <= 0) {
-                    isGreen       = !isGreen
-                    signalSeconds = if (isGreen) Random.nextInt(20, 40) else Random.nextInt(25, 50)
+                delay(2500)
+                for (i in cmpCountsLive.indices) {
+                    // Your route stays a touch stickier; others wander more.
+                    val jitter = if (i == selectedIdx) Random.nextInt(-4, 6) else Random.nextInt(-9, 10)
+                    cmpCountsLive[i] = (cmpCountsLive[i] + jitter).coerceAtLeast(8)
                 }
-                updateSignalUi()
+                renderComparison()
             }
         }
     }
 
-    private fun updateSignalUi() {
-        val phaseText  = if (isGreen) "🟢  GREEN" else "🔴  RED"
-        val phaseColor = if (isGreen) Color.parseColor("#43A047") else Color.parseColor("#E53935")
-        val countText  = "${signalSeconds}s"
+    private fun renderComparison() {
+        for (i in cmpLabels.indices) {
+            val c      = cmpCountsLive[i]
+            val cColor = congestionColor(c)
+            val spd    = expectedSpeed(c)
+            val mine   = i == selectedIdx
+            cmpLabels[i].text = if (mine) "Route ${i + 1} ★" else "Route ${i + 1}"
+            cmpBars[i].progressTintList = ColorStateList.valueOf(cColor)
+            // Smooth animated bar movement (API 24+).
+            cmpBars[i].setProgress(congestionProgress(c).coerceIn(0, 100), true)
+            cmpCountViews[i].text = "${congestionIcon(c)} $c  ·  ~$spd km/h"
+            cmpCountViews[i].setTextColor(cColor)
+            cmpLabels[i].setTextColor(if (mine) selectedColor else Color.parseColor("#8B978C"))
+            cmpLabels[i].textSize = if (mine) 13f else 12f
+        }
+    }
 
+    // ── V2I next-red-light advisory ──────────────────────────────────────────
+
+    private val junctionPool = listOf(
+        "Hebbal Flyover", "Mekhri Circle", "Cauvery Jn", "Windsor Manor",
+        "Trinity Circle", "Domlur Flyover", "Marathahalli Br", "Silk Board Jn",
+        "Tin Factory", "KR Puram Jn", "Sony World Jn", "Sarjapur Signal",
+        "Madiwala Check", "BTM Signal", "Banaswadi Jn", "Hennur Cross",
+    )
+
+    private fun startSignalAdvisory(distanceKm: Double, speed: Int, destName: String) {
+        cruiseSpeed = speed.coerceIn(12, 70)
+        buildSignals(distanceKm)
+        renderSignalAdvisory(destName)
+
+        lifecycleScope.launch {
+            while (true) {
+                delay(1000)
+                simClock++
+                // Advance the car along the route (time-accelerated ~25× for the demo).
+                traveledKm += cruiseSpeed / 3600.0 * 25.0
+                renderSignalAdvisory(destName)
+            }
+        }
+    }
+
+    /** Place signals every ~1.8 km along the route, each on its own phase cycle. */
+    private fun buildSignals(distanceKm: Double) {
+        routeSignals.clear()
+        if (distanceKm <= 0) return
+        val spacing = 1.8
+        var pos = spacing * (0.5 + Random.nextDouble() * 0.4)
+        val names = junctionPool.shuffled()
+        var n = 0
+        while (pos < distanceKm && n < names.size) {
+            // Heavier corridors green-wave fewer signals.
+            val synced = Random.nextInt(100) < 70
+            routeSignals.add(
+                RoadSignal(
+                    name   = names[n],
+                    posKm  = pos,
+                    green  = if (synced) Random.nextInt(28, 42) else Random.nextInt(18, 28),
+                    red    = if (synced) Random.nextInt(18, 30) else Random.nextInt(30, 48),
+                    offset = Random.nextInt(0, 60),
+                    synced = synced,
+                )
+            )
+            pos += spacing * (0.8 + Random.nextDouble() * 0.6)
+            n++
+        }
+    }
+
+    /** Returns (isGreen, secondsUntilChange) for a signal at the current clock. */
+    private fun phaseOf(sig: RoadSignal): Pair<Boolean, Int> {
+        val cycle = sig.green + sig.red
+        val t = (simClock + sig.offset) % cycle
+        return if (t < sig.green) true to (sig.green - t)
+               else false to (cycle - t)
+    }
+
+    private fun renderSignalAdvisory(destName: String) {
         val phaseView = findViewById<TextView>(R.id.tv_signal_phase) ?: return
-        val countView = findViewById<TextView>(R.id.tv_signal_countdown) ?: return
-        phaseView.text = phaseText
-        phaseView.setTextColor(phaseColor)
-        countView.text = countText
-        countView.setTextColor(phaseColor)
+        val locView   = findViewById<TextView>(R.id.tv_signal_location)
+        val distView  = findViewById<TextView>(R.id.tv_signal_distance)
+        val advView   = findViewById<TextView>(R.id.tv_signal_advisory)
+        val countView = findViewById<TextView>(R.id.tv_signal_countdown)
+        val countLbl  = findViewById<TextView>(R.id.tv_signal_countlabel)
+
+        val next = routeSignals.firstOrNull { it.posKm > traveledKm }
+        if (next == null) {
+            phaseView.text = "🟢 CORRIDOR CLEAR"
+            phaseView.setTextColor(Color.parseColor("#2DE371"))
+            locView.text  = "Arriving at $destName"
+            distView.text = "all signals behind you"
+            advView.text  = "✓ green wave complete"
+            countView.text = "★"
+            countView.setTextColor(Color.parseColor("#2DE371"))
+            countLbl.text = "arrived"
+            return
+        }
+
+        val (green, secs) = phaseOf(next)
+        val aheadKm = (next.posKm - traveledKm).coerceAtLeast(0.0)
+        val etaToSignal = (aheadKm / cruiseSpeed * 3600).toInt()  // seconds to reach it
+
+        val red   = Color.parseColor("#FF5247")
+        val grn   = Color.parseColor("#2DE371")
+
+        if (green) {
+            phaseView.text = "🟢 NEXT SIGNAL · GREEN"
+            phaseView.setTextColor(grn)
+            countLbl.text = "to red"
+            countView.setTextColor(grn)
+        } else {
+            phaseView.text = "🔴 NEXT RED LIGHT"
+            phaseView.setTextColor(red)
+            countLbl.text = "to green"
+            countView.setTextColor(red)
+        }
+        countView.text = "${secs}s"
+
+        locView.text  = next.name + if (next.synced) "  ⟢" else ""
+        distView.text = "%.1f km ahead · ~%ds away".format(aheadKm, etaToSignal)
+
+        // Advisory: will the light be red when you arrive?
+        val (greenOnArrival, _) = phaseOf(next.copy(offset = next.offset + etaToSignal))
+        advView.text = when {
+            next.synced && greenOnArrival -> "⟢ hold ${cruiseSpeed} km/h — green wave synced"
+            greenOnArrival                -> "✓ clears before you arrive"
+            else                          -> "↘ ease off — red when you reach it"
+        }
     }
 
     private fun setupReportButtons(totalActive: Int) {
