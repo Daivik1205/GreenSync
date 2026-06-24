@@ -35,7 +35,10 @@ android {
 
 dependencies {
     implementation("androidx.car.app:app:1.4.0")
-    implementation("androidx.car.app:app-automotive:1.4.0")
+    // Android Auto (phone projected to the car head unit).
+    // NOTE: do not also add app-automotive here — the two host libraries
+    // conflict in a single APK. AAOS would be a separate build target.
+    implementation("androidx.car.app:app-projected:1.4.0")
 
     implementation("org.osmdroid:osmdroid-android:6.1.18")
 
