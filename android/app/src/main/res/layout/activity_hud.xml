@@ -62,6 +62,40 @@
             android:textStyle="bold"
             android:background="@drawable/badge_rounded" />
 
+        <!-- Selected route map -->
+        <com.google.android.material.card.MaterialCardView
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:layout_marginHorizontal="16dp"
+            android:layout_marginBottom="12dp"
+            app:cardBackgroundColor="@color/surface_card"
+            app:cardCornerRadius="14dp"
+            app:cardElevation="4dp">
+
+            <LinearLayout
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:orientation="vertical">
+
+                <org.osmdroid.views.MapView
+                    android:id="@+id/hud_map"
+                    android:layout_width="match_parent"
+                    android:layout_height="210dp" />
+
+                <TextView
+                    android:id="@+id/tv_map_caption"
+                    android:layout_width="match_parent"
+                    android:layout_height="wrap_content"
+                    android:paddingHorizontal="14dp"
+                    android:paddingVertical="9dp"
+                    android:fontFamily="@font/jetbrains_mono"
+                    android:text="YOUR ROUTE · live"
+                    android:textColor="@color/accent_green"
+                    android:textSize="11sp"
+                    android:letterSpacing="0.08" />
+            </LinearLayout>
+        </com.google.android.material.card.MaterialCardView>
+
         <!-- 3 stat cards -->
         <LinearLayout
             android:layout_width="match_parent"
@@ -186,6 +220,153 @@
             </com.google.android.material.card.MaterialCardView>
 
         </LinearLayout>
+
+        <!-- SUMO digital-twin telemetry (mirrors the Streamlit sim dashboard) -->
+        <com.google.android.material.card.MaterialCardView
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:layout_marginHorizontal="16dp"
+            android:layout_marginTop="12dp"
+            app:cardBackgroundColor="@color/surface_card"
+            app:cardCornerRadius="12dp"
+            app:cardElevation="4dp">
+
+            <LinearLayout
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:orientation="vertical"
+                android:padding="16dp">
+
+                <LinearLayout
+                    android:layout_width="match_parent"
+                    android:layout_height="wrap_content"
+                    android:orientation="horizontal"
+                    android:gravity="center_vertical">
+                    <TextView
+                        android:layout_width="0dp"
+                        android:layout_weight="1"
+                        android:layout_height="wrap_content"
+                        android:text="◇ SUMO DIGITAL TWIN"
+                        android:textColor="@color/text_primary"
+                        android:textSize="13sp"
+                        android:textStyle="bold"
+                        android:letterSpacing="0.06" />
+                    <TextView
+                        android:id="@+id/tv_sim_live"
+                        android:layout_width="wrap_content"
+                        android:layout_height="wrap_content"
+                        android:fontFamily="@font/jetbrains_mono"
+                        android:text="● LIVE"
+                        android:textColor="@color/accent_green"
+                        android:textSize="10sp" />
+                </LinearLayout>
+
+                <TextView
+                    android:layout_width="match_parent"
+                    android:layout_height="wrap_content"
+                    android:layout_marginTop="2dp"
+                    android:text="Bengaluru network mirror — your intent runs as a shadow vehicle"
+                    android:textColor="@color/hint_text"
+                    android:textSize="10sp" />
+
+                <!-- Network snapshot -->
+                <TextView
+                    android:layout_width="match_parent"
+                    android:layout_height="wrap_content"
+                    android:layout_marginTop="14dp"
+                    android:text="NETWORK SNAPSHOT"
+                    android:textColor="@color/hint_text"
+                    android:textSize="9sp"
+                    android:letterSpacing="0.14" />
+
+                <LinearLayout
+                    android:layout_width="match_parent"
+                    android:layout_height="wrap_content"
+                    android:orientation="horizontal"
+                    android:layout_marginTop="6dp">
+                    <LinearLayout android:layout_width="0dp" android:layout_weight="1" android:layout_height="wrap_content" android:orientation="vertical">
+                        <TextView android:id="@+id/tv_sim_vehicles" android:layout_width="wrap_content" android:layout_height="wrap_content" android:fontFamily="@font/jetbrains_mono" android:textColor="@color/text_primary" android:textSize="19sp" android:textStyle="bold" />
+                        <TextView android:layout_width="wrap_content" android:layout_height="wrap_content" android:text="vehicles" android:textColor="@color/secondary_text" android:textSize="10sp" />
+                    </LinearLayout>
+                    <LinearLayout android:layout_width="0dp" android:layout_weight="1" android:layout_height="wrap_content" android:orientation="vertical">
+                        <TextView android:id="@+id/tv_sim_zones" android:layout_width="wrap_content" android:layout_height="wrap_content" android:fontFamily="@font/jetbrains_mono" android:textColor="@color/text_primary" android:textSize="19sp" android:textStyle="bold" />
+                        <TextView android:layout_width="wrap_content" android:layout_height="wrap_content" android:text="RSU zones" android:textColor="@color/secondary_text" android:textSize="10sp" />
+                    </LinearLayout>
+                    <LinearLayout android:layout_width="0dp" android:layout_weight="1" android:layout_height="wrap_content" android:orientation="vertical">
+                        <TextView android:id="@+id/tv_sim_edges" android:layout_width="wrap_content" android:layout_height="wrap_content" android:fontFamily="@font/jetbrains_mono" android:textColor="@color/text_primary" android:textSize="19sp" android:textStyle="bold" />
+                        <TextView android:layout_width="wrap_content" android:layout_height="wrap_content" android:text="tracked edges" android:textColor="@color/secondary_text" android:textSize="10sp" />
+                    </LinearLayout>
+                    <LinearLayout android:layout_width="0dp" android:layout_weight="1" android:layout_height="wrap_content" android:orientation="vertical">
+                        <TextView android:id="@+id/tv_sim_step" android:layout_width="wrap_content" android:layout_height="wrap_content" android:fontFamily="@font/jetbrains_mono" android:textColor="@color/text_primary" android:textSize="19sp" android:textStyle="bold" />
+                        <TextView android:layout_width="wrap_content" android:layout_height="wrap_content" android:text="sim step" android:textColor="@color/secondary_text" android:textSize="10sp" />
+                    </LinearLayout>
+                </LinearLayout>
+
+                <!-- GRU + LSH forecast -->
+                <TextView
+                    android:layout_width="match_parent"
+                    android:layout_height="wrap_content"
+                    android:layout_marginTop="14dp"
+                    android:text="GRU + LSH FORECAST"
+                    android:textColor="@color/hint_text"
+                    android:textSize="9sp"
+                    android:letterSpacing="0.14" />
+
+                <LinearLayout
+                    android:layout_width="match_parent"
+                    android:layout_height="wrap_content"
+                    android:orientation="horizontal"
+                    android:layout_marginTop="6dp">
+                    <LinearLayout android:layout_width="0dp" android:layout_weight="1" android:layout_height="wrap_content" android:orientation="vertical">
+                        <TextView android:id="@+id/tv_sim_loss" android:layout_width="wrap_content" android:layout_height="wrap_content" android:fontFamily="@font/jetbrains_mono" android:textColor="@color/accent_green" android:textSize="17sp" android:textStyle="bold" />
+                        <TextView android:layout_width="wrap_content" android:layout_height="wrap_content" android:text="train loss" android:textColor="@color/secondary_text" android:textSize="10sp" />
+                    </LinearLayout>
+                    <LinearLayout android:layout_width="0dp" android:layout_weight="1" android:layout_height="wrap_content" android:orientation="vertical">
+                        <TextView android:id="@+id/tv_sim_samples" android:layout_width="wrap_content" android:layout_height="wrap_content" android:fontFamily="@font/jetbrains_mono" android:textColor="@color/text_primary" android:textSize="17sp" android:textStyle="bold" />
+                        <TextView android:layout_width="wrap_content" android:layout_height="wrap_content" android:text="samples" android:textColor="@color/secondary_text" android:textSize="10sp" />
+                    </LinearLayout>
+                    <LinearLayout android:layout_width="0dp" android:layout_weight="1" android:layout_height="wrap_content" android:orientation="vertical">
+                        <TextView android:id="@+id/tv_sim_lsh" android:layout_width="wrap_content" android:layout_height="wrap_content" android:fontFamily="@font/jetbrains_mono" android:textColor="@color/text_primary" android:textSize="17sp" android:textStyle="bold" />
+                        <TextView android:layout_width="wrap_content" android:layout_height="wrap_content" android:text="LSH buckets" android:textColor="@color/secondary_text" android:textSize="10sp" />
+                    </LinearLayout>
+                </LinearLayout>
+
+                <View
+                    android:layout_width="match_parent"
+                    android:layout_height="1dp"
+                    android:background="@color/border_hairline"
+                    android:layout_marginTop="14dp" />
+
+                <!-- Your route vs static baseline -->
+                <TextView
+                    android:layout_width="match_parent"
+                    android:layout_height="wrap_content"
+                    android:layout_marginTop="14dp"
+                    android:text="YOUR ROUTE vs STATIC BASELINE (A*)"
+                    android:textColor="@color/hint_text"
+                    android:textSize="9sp"
+                    android:letterSpacing="0.12" />
+
+                <LinearLayout
+                    android:layout_width="match_parent"
+                    android:layout_height="wrap_content"
+                    android:orientation="horizontal"
+                    android:layout_marginTop="6dp">
+                    <LinearLayout android:layout_width="0dp" android:layout_weight="1" android:layout_height="wrap_content" android:orientation="vertical">
+                        <TextView android:id="@+id/tv_saved_time" android:layout_width="wrap_content" android:layout_height="wrap_content" android:fontFamily="@font/jetbrains_mono" android:textColor="@color/accent_green" android:textSize="18sp" android:textStyle="bold" />
+                        <TextView android:layout_width="wrap_content" android:layout_height="wrap_content" android:text="time saved" android:textColor="@color/secondary_text" android:textSize="10sp" />
+                    </LinearLayout>
+                    <LinearLayout android:layout_width="0dp" android:layout_weight="1" android:layout_height="wrap_content" android:orientation="vertical">
+                        <TextView android:id="@+id/tv_saved_emit" android:layout_width="wrap_content" android:layout_height="wrap_content" android:fontFamily="@font/jetbrains_mono" android:textColor="@color/accent_green" android:textSize="18sp" android:textStyle="bold" />
+                        <TextView android:layout_width="wrap_content" android:layout_height="wrap_content" android:text="emissions saved" android:textColor="@color/secondary_text" android:textSize="10sp" />
+                    </LinearLayout>
+                    <LinearLayout android:layout_width="0dp" android:layout_weight="1" android:layout_height="wrap_content" android:orientation="vertical">
+                        <TextView android:id="@+id/tv_saved_speed" android:layout_width="wrap_content" android:layout_height="wrap_content" android:fontFamily="@font/jetbrains_mono" android:textColor="@color/accent_green" android:textSize="18sp" android:textStyle="bold" />
+                        <TextView android:layout_width="wrap_content" android:layout_height="wrap_content" android:text="avg speed" android:textColor="@color/secondary_text" android:textSize="10sp" />
+                    </LinearLayout>
+                </LinearLayout>
+            </LinearLayout>
+        </com.google.android.material.card.MaterialCardView>
 
         <!-- V2I Signal countdown card -->
         <com.google.android.material.card.MaterialCardView

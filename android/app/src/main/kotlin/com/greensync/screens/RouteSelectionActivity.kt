@@ -401,6 +401,12 @@ class RouteSelectionActivity : AppCompatActivity() {
     private fun launchHud(card: RouteCard, eta: Int, speed: Int) {
         val idx = card.routeNo - 1
         viewModel.selectRoute(card.route)
+        // Flatten geometry to [lat0, lng0, lat1, lng1, …] so the HUD can redraw the chosen route.
+        val geometry = DoubleArray(card.route.geometry.size * 2)
+        card.route.geometry.forEachIndexed { i, pt ->
+            geometry[i * 2]     = pt.latitude
+            geometry[i * 2 + 1] = pt.longitude
+        }
         startActivity(
             HUDActivity.newIntent(
                 context     = this,
@@ -414,6 +420,7 @@ class RouteSelectionActivity : AppCompatActivity() {
                 adjustedEta = eta,
                 speed       = speed,
                 distanceKm  = card.route.distanceKm,
+                geometry    = geometry,
             )
         )
     }
