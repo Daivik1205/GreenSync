@@ -626,41 +626,13 @@
             android:paddingHorizontal="16dp"
             android:layout_marginBottom="10dp" />
 
+        <!-- Rows are added at runtime, one per real route (see HUDActivity). -->
         <LinearLayout
+            android:id="@+id/ll_comparison"
             android:layout_width="match_parent"
             android:layout_height="wrap_content"
-            android:orientation="horizontal"
-            android:gravity="center_vertical"
-            android:paddingHorizontal="16dp"
-            android:layout_marginBottom="8dp">
-            <TextView android:id="@+id/tv_cmp_label_0" android:layout_width="64dp" android:layout_height="wrap_content" android:textColor="@color/secondary_text" android:textSize="12sp" />
-            <ProgressBar android:id="@+id/pb_cmp_0" style="@style/Widget.AppCompat.ProgressBar.Horizontal" android:layout_width="0dp" android:layout_height="8dp" android:layout_weight="1" android:layout_marginHorizontal="8dp" android:max="100" />
-            <TextView android:id="@+id/tv_cmp_count_0" android:layout_width="100dp" android:layout_height="wrap_content" android:fontFamily="@font/jetbrains_mono" android:textColor="@color/secondary_text" android:textSize="11sp" android:gravity="end" />
-        </LinearLayout>
-
-        <LinearLayout
-            android:layout_width="match_parent"
-            android:layout_height="wrap_content"
-            android:orientation="horizontal"
-            android:gravity="center_vertical"
-            android:paddingHorizontal="16dp"
-            android:layout_marginBottom="8dp">
-            <TextView android:id="@+id/tv_cmp_label_1" android:layout_width="64dp" android:layout_height="wrap_content" android:textColor="@color/secondary_text" android:textSize="12sp" />
-            <ProgressBar android:id="@+id/pb_cmp_1" style="@style/Widget.AppCompat.ProgressBar.Horizontal" android:layout_width="0dp" android:layout_height="8dp" android:layout_weight="1" android:layout_marginHorizontal="8dp" android:max="100" />
-            <TextView android:id="@+id/tv_cmp_count_1" android:layout_width="100dp" android:layout_height="wrap_content" android:fontFamily="@font/jetbrains_mono" android:textColor="@color/secondary_text" android:textSize="11sp" android:gravity="end" />
-        </LinearLayout>
-
-        <LinearLayout
-            android:layout_width="match_parent"
-            android:layout_height="wrap_content"
-            android:orientation="horizontal"
-            android:gravity="center_vertical"
-            android:paddingHorizontal="16dp"
-            android:layout_marginBottom="16dp">
-            <TextView android:id="@+id/tv_cmp_label_2" android:layout_width="64dp" android:layout_height="wrap_content" android:textColor="@color/secondary_text" android:textSize="12sp" />
-            <ProgressBar android:id="@+id/pb_cmp_2" style="@style/Widget.AppCompat.ProgressBar.Horizontal" android:layout_width="0dp" android:layout_height="8dp" android:layout_weight="1" android:layout_marginHorizontal="8dp" android:max="100" />
-            <TextView android:id="@+id/tv_cmp_count_2" android:layout_width="100dp" android:layout_height="wrap_content" android:fontFamily="@font/jetbrains_mono" android:textColor="@color/secondary_text" android:textSize="11sp" android:gravity="end" />
-        </LinearLayout>
+            android:orientation="vertical"
+            android:layout_marginBottom="8dp" />
 
         <!-- Divider -->
         <View

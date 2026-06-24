@@ -312,23 +312,50 @@ class HUDActivity : AppCompatActivity() {
     // ── Live route comparison ────────────────────────────────────────────────
 
     private fun setupLiveComparison(allCounts: IntArray, updatedCount: Int) {
-        cmpLabels = arrayOf(
-            findViewById(R.id.tv_cmp_label_0),
-            findViewById(R.id.tv_cmp_label_1),
-            findViewById(R.id.tv_cmp_label_2),
-        )
-        cmpBars = arrayOf(
-            findViewById(R.id.pb_cmp_0),
-            findViewById(R.id.pb_cmp_1),
-            findViewById(R.id.pb_cmp_2),
-        )
-        cmpCountViews = arrayOf(
-            findViewById(R.id.tv_cmp_count_0),
-            findViewById(R.id.tv_cmp_count_1),
-            findViewById(R.id.tv_cmp_count_2),
-        )
+        // One row per real route — no phantom third route when only two exist.
+        val n = allCounts.size.coerceAtLeast(1)
+        val container = findViewById<LinearLayout>(R.id.ll_comparison)
+        container.removeAllViews()
+
+        val labels = ArrayList<TextView>(n)
+        val bars   = ArrayList<ProgressBar>(n)
+        val counts = ArrayList<TextView>(n)
+        val dp = resources.displayMetrics.density
+
+        repeat(n) {
+            val row = LinearLayout(this).apply {
+                orientation = LinearLayout.HORIZONTAL
+                gravity = android.view.Gravity.CENTER_VERTICAL
+                setPadding((16 * dp).toInt(), (4 * dp).toInt(), (16 * dp).toInt(), (4 * dp).toInt())
+            }
+            val label = TextView(this).apply {
+                layoutParams = LinearLayout.LayoutParams((68 * dp).toInt(), LinearLayout.LayoutParams.WRAP_CONTENT)
+                textSize = 12f
+                setTextColor(Color.parseColor("#8B978C"))
+            }
+            val bar = ProgressBar(this, null, android.R.attr.progressBarStyleHorizontal).apply {
+                layoutParams = LinearLayout.LayoutParams(0, (8 * dp).toInt(), 1f).apply {
+                    marginStart = (8 * dp).toInt(); marginEnd = (8 * dp).toInt()
+                }
+                max = 100
+            }
+            val count = TextView(this).apply {
+                layoutParams = LinearLayout.LayoutParams((104 * dp).toInt(), LinearLayout.LayoutParams.WRAP_CONTENT)
+                textSize = 11f
+                gravity = android.view.Gravity.END
+                setTextColor(Color.parseColor("#8B978C"))
+                typeface = androidx.core.content.res.ResourcesCompat.getFont(this@HUDActivity, R.font.jetbrains_mono)
+            }
+            row.addView(label); row.addView(bar); row.addView(count)
+            container.addView(row)
+            labels.add(label); bars.add(bar); counts.add(count)
+        }
+        cmpLabels     = labels.toTypedArray()
+        cmpBars       = bars.toTypedArray()
+        cmpCountViews = counts.toTypedArray()
+
         // Seed live counts: your route reflects you having joined it.
-        cmpCountsLive = IntArray(cmpLabels.size) {
+        cmpCountsLive = IntArray(n) {
             if (it == selectedIdx) updatedCount else allCounts.getOrElse(it) { 100 }
         }
         renderComparison()

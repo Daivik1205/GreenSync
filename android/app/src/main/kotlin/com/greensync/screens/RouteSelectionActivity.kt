@@ -140,7 +140,8 @@ class RouteSelectionActivity : AppCompatActivity() {
     private var currentRoutes: List<Route> = emptyList()
     private var networkOptimal = 73
 
-    private val liveCounts = MOCK_USER_COUNTS.copyOf()
+    // Sized to the actual number of routes once they load (see observeViewModel).
+    private var liveCounts = MOCK_USER_COUNTS.copyOf()
     private val liveHandler = Handler(Looper.getMainLooper())
     private var tickerAlertIdx = 0
     private val liveRunnable = object : Runnable {
@@ -289,6 +290,11 @@ class RouteSelectionActivity : AppCompatActivity() {
         findViewById<TextView>(R.id.tv_ticker).text = "$a        ·        $b        ·        $c"
     }
 
+    /** Plausible live commuter counts, one per real route (canonical first 3, then varied). */
+    private fun seedCounts(n: Int): IntArray = IntArray(n.coerceAtLeast(1)) { i ->
+        MOCK_USER_COUNTS.getOrElse(i) { 60 + Random.nextInt(560) }
+    }
+
     private fun observeViewModel() {
         lifecycleScope.launch {
             viewModel.uiState.collectLatest { state ->
@@ -297,8 +303,13 @@ class RouteSelectionActivity : AppCompatActivity() {
                     is RouteUiState.Success -> {
                         showLoading(false)
                         currentRoutes = state.routes
+                        // Resize the live commuter counts to match the real route count,
+                        // so every downstream screen reflects exactly how many routes exist.
+                        liveCounts = seedCounts(state.routes.size)
+                        adapter.setCounts(liveCounts)
                         drawRoutes(state.routes)
                         applyMode()
+                        updateMeta()
                     }
                     is RouteUiState.Error -> {
                         showLoading(false)
@@ -436,11 +447,13 @@ class RouteSelectionActivity : AppCompatActivity() {
 
     private class RouteAdapter(
         private var cards: List<RouteCard>,
-        private val liveCounts: IntArray,
+        private var liveCounts: IntArray,
         private val onSelect: (RouteCard) -> Unit,
     ) : RecyclerView.Adapter<RouteAdapter.VH>() {
 
         private var mode = Mode.BALANCED
+
+        fun setCounts(counts: IntArray) { liveCounts = counts; notifyDataSetChanged() }
 
         inner class VH(view: View) : RecyclerView.ViewHolder(view) {
             val strip:   View        = view.findViewById(R.id.congestion_strip)

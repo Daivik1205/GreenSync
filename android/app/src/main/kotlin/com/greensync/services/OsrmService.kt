@@ -25,7 +25,9 @@ class OsrmService(
 ) {
     companion object {
         private const val OSRM_BASE_URL = "https://router.project-osrm.org"
-        private const val MAX_ALTERNATIVES = 3
+        // Ask OSRM for more alternatives; it returns however many distinct
+        // routes it can actually find (often fewer for short/simple trips).
+        private const val MAX_ALTERNATIVES = 5
     }
 
     private val client = OkHttpClient.Builder()
