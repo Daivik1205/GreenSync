@@ -10,12 +10,16 @@ import android.os.Bundle
 import android.view.View
 import android.widget.ProgressBar
 import android.widget.TextView
+import android.os.Looper
 import androidx.appcompat.app.AppCompatActivity
+import androidx.car.app.connection.CarConnection
 import androidx.core.content.ContextCompat
 import androidx.lifecycle.lifecycleScope
+import com.google.android.gms.location.LocationCallback
+import com.google.android.gms.location.LocationRequest
+import com.google.android.gms.location.LocationResult
 import com.google.android.gms.location.LocationServices
 import com.google.android.gms.location.Priority
-import com.google.android.gms.tasks.CancellationTokenSource
 import com.greensync.R
 import com.greensync.services.CarTelemetry
 import kotlinx.coroutines.Dispatchers
@@ -67,7 +71,13 @@ class VehicleActivity : AppCompatActivity() {
     private var rpm         = 820
     private var streamCount = 0
 
+    // Real signals
+    private var connectionType = CarConnection.CONNECTION_TYPE_NOT_CONNECTED
+    private var gpsSpeedKmh: Double? = null
+
     private val cpmHelper by lazy { CarTelemetry(this) }
+    private val fused by lazy { LocationServices.getFusedLocationProviderClient(this) }
+    private var geocodeAt = 0L
 
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
@@ -80,19 +90,40 @@ class VehicleActivity : AppCompatActivity() {
         findViewById<TextView>(R.id.btn_back).setOnClickListener { finish() }
         setupStaticUi()
         pulseDot()
+        observeCarConnection()
         startTelemetry()
-        fetchLocation()
+        startLocationUpdates()
     }
 
     private fun setupStaticUi() {
-        findViewById<TextView>(R.id.tv_veh_status).text =
-            if (connected) "● CONNECTED — head unit" else "● SIMULATED — phone not docked"
         findViewById<TextView>(R.id.tv_veh_name).text   = profile.name
         findViewById<TextView>(R.id.tv_veh_engine).text = if (profile.isEv) "⚡ EV" else "⛽ ICE"
+        renderStatus()
+    }
+
+    /** Observe the *real* Android Auto / Automotive connection state. */
+    private fun observeCarConnection() {
+        CarConnection(this).type.observe(this) { type ->
+            connectionType = type
+            connected = type != CarConnection.CONNECTION_TYPE_NOT_CONNECTED || cpmHelper.available
+            renderStatus()
+        }
+    }
+
+    private fun renderStatus() {
+        val status = when (connectionType) {
+            CarConnection.CONNECTION_TYPE_PROJECTION -> "● CONNECTED — Android Auto"
+            CarConnection.CONNECTION_TYPE_NATIVE     -> "● CONNECTED — Android Automotive"
+            else -> if (cpmHelper.available) "● CONNECTED — head unit" else "○ NOT IN CAR — phone"
+        }
+        findViewById<TextView>(R.id.tv_veh_status).text = status
+
+        val src = if (connectionType == CarConnection.CONNECTION_TYPE_PROJECTION)
+            "Speed & location are live from this phone (your i20 doesn't share ECU over Android Auto)."
+        else
+            "Live position from phone GPS · vehicle metrics simulated until docked in the car."
         findViewById<TextView>(R.id.tv_veh_broadcast).text =
-            "📡 Streaming to GreenSync · $vehicleId · every 5s\n" +
-            "Route engine factors your ${if (profile.isEv) "charge & range" else "fuel & range"}, " +
-            "engine type and live position."
+            "📡 GreenSync · $vehicleId · streaming every 5s\n$src"
     }
 
     private fun pulseDot() {
@@ -120,9 +151,12 @@ class VehicleActivity : AppCompatActivity() {
 
     /** One simulation/read step. */
     private fun tick() {
-        // Speed: prefer the real ECU value when docked, else a smooth drive cycle.
-        val realSpeed = if (connected) cpmHelper.speedKmh() else null
-        speed = realSpeed ?: nextMockSpeed()
+        // Speed priority: AAOS ECU → real phone GPS (when projected to a car) → demo.
+        speed = when {
+            cpmHelper.speedKmh() != null -> cpmHelper.speedKmh()!!
+            connectionType == CarConnection.CONNECTION_TYPE_PROJECTION -> gpsSpeedKmh ?: 0.0
+            else -> nextMockSpeed()
+        }
 
         // RPM tracks speed (idle ~820, ~ +85 per km/h, capped).
         rpm = if (speed < 1) 800 + Random.nextInt(60) else (900 + speed * 85).roundToInt().coerceAtMost(6200)
@@ -201,10 +235,16 @@ class VehicleActivity : AppCompatActivity() {
         }
     }
 
-    // ── Location ─────────────────────────────────────────────────────────────
+    // ── Location (real, continuous) ──────────────────────────────────────────
+
+    private val locationCallback = object : LocationCallback() {
+        override fun onLocationResult(result: LocationResult) {
+            result.lastLocation?.let { applyLocation(it) }
+        }
+    }
 
     @SuppressLint("MissingPermission")
-    private fun fetchLocation() {
+    private fun startLocationUpdates() {
         val granted = ContextCompat.checkSelfPermission(
             this, Manifest.permission.ACCESS_FINE_LOCATION
         ) == PackageManager.PERMISSION_GRANTED ||
@@ -215,16 +255,22 @@ class VehicleActivity : AppCompatActivity() {
             findViewById<TextView>(R.id.tv_veh_location).text = "Location permission off"
             return
         }
-        val client = LocationServices.getFusedLocationProviderClient(this)
-        try {
-            client.getCurrentLocation(Priority.PRIORITY_HIGH_ACCURACY, CancellationTokenSource().token)
-                .addOnSuccessListener { loc -> loc?.let { applyLocation(it) } }
-        } catch (e: Exception) { /* leave "Locating…" */ }
+        val request = LocationRequest.Builder(Priority.PRIORITY_HIGH_ACCURACY, 1000L)
+            .setMinUpdateIntervalMillis(1000L)
+            .build()
+        runCatching { fused.requestLocationUpdates(request, locationCallback, Looper.getMainLooper()) }
     }
 
     private fun applyLocation(loc: Location) {
+        // Real GPS speed feeds the speedometer when projected to a car.
+        gpsSpeedKmh = if (loc.hasSpeed()) (loc.speed * 3.6) else gpsSpeedKmh
         findViewById<TextView>(R.id.tv_veh_coords).text =
             "%.4f, %.4f · GPS lock".format(loc.latitude, loc.longitude)
+
+        // Reverse-geocode the area at most every ~8s.
+        val now = System.currentTimeMillis()
+        if (now - geocodeAt < 8000) return
+        geocodeAt = now
         lifecycleScope.launch {
             val name = withContext(Dispatchers.IO) {
                 try {
@@ -236,5 +282,10 @@ class VehicleActivity : AppCompatActivity() {
             } ?: "On the move"
             findViewById<TextView>(R.id.tv_veh_location).text = name
         }
+    }
+
+    override fun onDestroy() {
+        super.onDestroy()
+        runCatching { fused.removeLocationUpdates(locationCallback) }
     }
 }
