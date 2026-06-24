@@ -44,6 +44,10 @@
             android:name=".screens.HUDActivity"
             android:exported="false" />
 
+        <activity
+            android:name=".screens.VehicleActivity"
+            android:exported="false" />
+
         <!-- Android Auto Car App Service -->
         <service
             android:name=".GreenSyncCarAppService"

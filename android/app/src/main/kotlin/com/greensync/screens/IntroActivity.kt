@@ -49,6 +49,10 @@ class IntroActivity : AppCompatActivity() {
             overridePendingTransition(android.R.anim.fade_in, android.R.anim.fade_out)
             finish()
         }
+
+        findViewById<TextView>(R.id.btn_intro_car).setOnClickListener {
+            startActivity(Intent(this, VehicleActivity::class.java))
+        }
     }
 
     override fun onDestroy() {
@@ -67,6 +71,7 @@ class IntroActivity : AppCompatActivity() {
             R.id.intro_feature_2,
             R.id.intro_feature_3,
             R.id.btn_enter,
+            R.id.btn_intro_car,
             R.id.tv_intro_footer,
         )
         ids.forEachIndexed { i, id ->

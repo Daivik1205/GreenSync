@@ -1,0 +1,316 @@
+<?xml version="1.0" encoding="utf-8"?>
+<ScrollView
+    xmlns:android="http://schemas.android.com/apk/res/android"
+    xmlns:app="http://schemas.android.com/apk/res-auto"
+    android:layout_width="match_parent"
+    android:layout_height="match_parent"
+    android:background="@color/surface_dark"
+    android:fillViewport="true">
+
+    <LinearLayout
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:orientation="vertical"
+        android:paddingBottom="32dp">
+
+        <!-- Top bar -->
+        <LinearLayout
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:orientation="horizontal"
+            android:gravity="center_vertical"
+            android:paddingHorizontal="8dp"
+            android:paddingTop="16dp"
+            android:paddingBottom="10dp">
+
+            <TextView
+                android:id="@+id/btn_back"
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:text="← Back"
+                android:textColor="@color/accent_green"
+                android:textSize="14sp"
+                android:paddingHorizontal="12dp"
+                android:paddingVertical="8dp"
+                android:background="?attr/selectableItemBackground" />
+
+            <TextView
+                android:layout_width="0dp"
+                android:layout_height="wrap_content"
+                android:layout_weight="1"
+                android:fontFamily="@font/space_grotesk"
+                android:textStyle="bold"
+                android:text="Vehicle · Android Auto"
+                android:textColor="@color/text_primary"
+                android:textSize="16sp"
+                android:gravity="center"
+                android:paddingEnd="60dp" />
+        </LinearLayout>
+
+        <!-- Connection status banner -->
+        <com.google.android.material.card.MaterialCardView
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:layout_marginHorizontal="16dp"
+            android:layout_marginBottom="12dp"
+            app:cardBackgroundColor="@color/surface_card"
+            app:cardCornerRadius="14dp"
+            app:cardElevation="4dp">
+
+            <LinearLayout
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:orientation="horizontal"
+                android:gravity="center_vertical"
+                android:padding="16dp">
+
+                <View
+                    android:id="@+id/dot_veh"
+                    android:layout_width="10dp"
+                    android:layout_height="10dp"
+                    android:background="@drawable/dot_live"
+                    android:layout_marginEnd="12dp" />
+
+                <LinearLayout
+                    android:layout_width="0dp"
+                    android:layout_weight="1"
+                    android:layout_height="wrap_content"
+                    android:orientation="vertical">
+                    <TextView
+                        android:id="@+id/tv_veh_status"
+                        android:layout_width="wrap_content"
+                        android:layout_height="wrap_content"
+                        android:fontFamily="@font/jetbrains_mono"
+                        android:textColor="@color/accent_green"
+                        android:textSize="13sp"
+                        android:textStyle="bold" />
+                    <TextView
+                        android:id="@+id/tv_veh_name"
+                        android:layout_width="wrap_content"
+                        android:layout_height="wrap_content"
+                        android:layout_marginTop="2dp"
+                        android:fontFamily="@font/space_grotesk"
+                        android:textStyle="bold"
+                        android:textColor="@color/text_primary"
+                        android:textSize="17sp" />
+                </LinearLayout>
+
+                <TextView
+                    android:id="@+id/tv_veh_engine"
+                    android:layout_width="wrap_content"
+                    android:layout_height="wrap_content"
+                    android:fontFamily="@font/jetbrains_mono"
+                    android:paddingHorizontal="12dp"
+                    android:paddingVertical="7dp"
+                    android:textColor="@color/accent_green"
+                    android:textSize="12sp"
+                    android:textStyle="bold"
+                    android:background="@drawable/chip_outline" />
+            </LinearLayout>
+        </com.google.android.material.card.MaterialCardView>
+
+        <!-- Speed hero -->
+        <com.google.android.material.card.MaterialCardView
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:layout_marginHorizontal="16dp"
+            android:layout_marginBottom="12dp"
+            app:cardBackgroundColor="@color/surface_card"
+            app:cardCornerRadius="14dp"
+            app:cardElevation="4dp">
+
+            <LinearLayout
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:orientation="vertical"
+                android:gravity="center"
+                android:padding="20dp">
+
+                <TextView
+                    android:layout_width="wrap_content"
+                    android:layout_height="wrap_content"
+                    android:text="LIVE SPEED"
+                    android:textColor="@color/hint_text"
+                    android:textSize="10sp"
+                    android:letterSpacing="0.18" />
+
+                <TextView
+                    android:id="@+id/tv_veh_speed"
+                    android:layout_width="wrap_content"
+                    android:layout_height="wrap_content"
+                    android:fontFamily="@font/jetbrains_mono"
+                    android:textColor="@color/text_primary"
+                    android:textSize="64sp"
+                    android:textStyle="bold"
+                    android:text="0" />
+
+                <TextView
+                    android:layout_width="wrap_content"
+                    android:layout_height="wrap_content"
+                    android:text="km/h"
+                    android:textColor="@color/secondary_text"
+                    android:textSize="13sp" />
+
+                <ProgressBar
+                    android:id="@+id/pb_veh_speed"
+                    style="@style/Widget.AppCompat.ProgressBar.Horizontal"
+                    android:layout_width="match_parent"
+                    android:layout_height="6dp"
+                    android:layout_marginTop="14dp"
+                    android:max="160"
+                    android:progressTint="@color/accent_green" />
+            </LinearLayout>
+        </com.google.android.material.card.MaterialCardView>
+
+        <!-- Metric grid -->
+        <TextView
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:layout_marginHorizontal="20dp"
+            android:layout_marginBottom="8dp"
+            android:text="ECU TELEMETRY"
+            android:textColor="@color/hint_text"
+            android:textSize="10sp"
+            android:letterSpacing="0.14" />
+
+        <LinearLayout
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:orientation="horizontal"
+            android:paddingHorizontal="12dp">
+
+            <LinearLayout android:layout_width="0dp" android:layout_weight="1" android:layout_height="wrap_content" android:orientation="vertical" android:layout_marginHorizontal="4dp" android:padding="14dp" android:background="@drawable/chip_outline">
+                <TextView android:id="@+id/tv_fuel" android:layout_width="wrap_content" android:layout_height="wrap_content" android:fontFamily="@font/jetbrains_mono" android:textColor="@color/text_primary" android:textSize="22sp" android:textStyle="bold" android:text="—" />
+                <TextView android:layout_width="wrap_content" android:layout_height="wrap_content" android:text="petrol left" android:textColor="@color/secondary_text" android:textSize="11sp" android:layout_marginTop="2dp" />
+            </LinearLayout>
+
+            <LinearLayout android:layout_width="0dp" android:layout_weight="1" android:layout_height="wrap_content" android:orientation="vertical" android:layout_marginHorizontal="4dp" android:padding="14dp" android:background="@drawable/chip_outline">
+                <TextView android:id="@+id/tv_range" android:layout_width="wrap_content" android:layout_height="wrap_content" android:fontFamily="@font/jetbrains_mono" android:textColor="@color/text_primary" android:textSize="22sp" android:textStyle="bold" android:text="—" />
+                <TextView android:layout_width="wrap_content" android:layout_height="wrap_content" android:text="range left" android:textColor="@color/secondary_text" android:textSize="11sp" android:layout_marginTop="2dp" />
+            </LinearLayout>
+        </LinearLayout>
+
+        <LinearLayout
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:orientation="horizontal"
+            android:paddingHorizontal="12dp"
+            android:layout_marginTop="8dp">
+
+            <LinearLayout android:layout_width="0dp" android:layout_weight="1" android:layout_height="wrap_content" android:orientation="vertical" android:layout_marginHorizontal="4dp" android:padding="14dp" android:background="@drawable/chip_outline">
+                <TextView android:id="@+id/tv_mileage" android:layout_width="wrap_content" android:layout_height="wrap_content" android:fontFamily="@font/jetbrains_mono" android:textColor="@color/text_primary" android:textSize="22sp" android:textStyle="bold" android:text="—" />
+                <TextView android:layout_width="wrap_content" android:layout_height="wrap_content" android:text="mileage" android:textColor="@color/secondary_text" android:textSize="11sp" android:layout_marginTop="2dp" />
+            </LinearLayout>
+
+            <LinearLayout android:layout_width="0dp" android:layout_weight="1" android:layout_height="wrap_content" android:orientation="vertical" android:layout_marginHorizontal="4dp" android:padding="14dp" android:background="@drawable/chip_outline">
+                <TextView android:id="@+id/tv_battery" android:layout_width="wrap_content" android:layout_height="wrap_content" android:fontFamily="@font/jetbrains_mono" android:textColor="@color/text_primary" android:textSize="22sp" android:textStyle="bold" android:text="—" />
+                <TextView android:layout_width="wrap_content" android:layout_height="wrap_content" android:text="battery" android:textColor="@color/secondary_text" android:textSize="11sp" android:layout_marginTop="2dp" />
+            </LinearLayout>
+        </LinearLayout>
+
+        <LinearLayout
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:orientation="horizontal"
+            android:paddingHorizontal="12dp"
+            android:layout_marginTop="8dp">
+
+            <LinearLayout android:layout_width="0dp" android:layout_weight="1" android:layout_height="wrap_content" android:orientation="vertical" android:layout_marginHorizontal="4dp" android:padding="14dp" android:background="@drawable/chip_outline">
+                <TextView android:id="@+id/tv_rpm" android:layout_width="wrap_content" android:layout_height="wrap_content" android:fontFamily="@font/jetbrains_mono" android:textColor="@color/text_primary" android:textSize="22sp" android:textStyle="bold" android:text="—" />
+                <TextView android:layout_width="wrap_content" android:layout_height="wrap_content" android:text="engine rpm" android:textColor="@color/secondary_text" android:textSize="11sp" android:layout_marginTop="2dp" />
+            </LinearLayout>
+
+            <LinearLayout android:layout_width="0dp" android:layout_weight="1" android:layout_height="wrap_content" android:orientation="vertical" android:layout_marginHorizontal="4dp" android:padding="14dp" android:background="@drawable/chip_outline">
+                <TextView android:id="@+id/tv_gear" android:layout_width="wrap_content" android:layout_height="wrap_content" android:fontFamily="@font/jetbrains_mono" android:textColor="@color/text_primary" android:textSize="22sp" android:textStyle="bold" android:text="—" />
+                <TextView android:layout_width="wrap_content" android:layout_height="wrap_content" android:text="gear" android:textColor="@color/secondary_text" android:textSize="11sp" android:layout_marginTop="2dp" />
+            </LinearLayout>
+        </LinearLayout>
+
+        <LinearLayout
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:orientation="horizontal"
+            android:paddingHorizontal="12dp"
+            android:layout_marginTop="8dp">
+
+            <LinearLayout android:layout_width="0dp" android:layout_weight="1" android:layout_height="wrap_content" android:orientation="vertical" android:layout_marginHorizontal="4dp" android:padding="14dp" android:background="@drawable/chip_outline">
+                <TextView android:id="@+id/tv_coolant" android:layout_width="wrap_content" android:layout_height="wrap_content" android:fontFamily="@font/jetbrains_mono" android:textColor="@color/text_primary" android:textSize="22sp" android:textStyle="bold" android:text="—" />
+                <TextView android:layout_width="wrap_content" android:layout_height="wrap_content" android:text="coolant" android:textColor="@color/secondary_text" android:textSize="11sp" android:layout_marginTop="2dp" />
+            </LinearLayout>
+
+            <LinearLayout android:layout_width="0dp" android:layout_weight="1" android:layout_height="wrap_content" android:orientation="vertical" android:layout_marginHorizontal="4dp" android:padding="14dp" android:background="@drawable/chip_outline">
+                <TextView android:id="@+id/tv_odo" android:layout_width="wrap_content" android:layout_height="wrap_content" android:fontFamily="@font/jetbrains_mono" android:textColor="@color/text_primary" android:textSize="22sp" android:textStyle="bold" android:text="—" />
+                <TextView android:layout_width="wrap_content" android:layout_height="wrap_content" android:text="odometer" android:textColor="@color/secondary_text" android:textSize="11sp" android:layout_marginTop="2dp" />
+            </LinearLayout>
+        </LinearLayout>
+
+        <!-- Location -->
+        <com.google.android.material.card.MaterialCardView
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:layout_marginHorizontal="16dp"
+            android:layout_marginTop="14dp"
+            app:cardBackgroundColor="@color/surface_card"
+            app:cardCornerRadius="14dp"
+            app:cardElevation="4dp">
+
+            <LinearLayout
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:orientation="horizontal"
+                android:gravity="center_vertical"
+                android:padding="16dp">
+
+                <TextView
+                    android:layout_width="wrap_content"
+                    android:layout_height="wrap_content"
+                    android:text="📍"
+                    android:textSize="22sp"
+                    android:layout_marginEnd="12dp" />
+
+                <LinearLayout
+                    android:layout_width="0dp"
+                    android:layout_weight="1"
+                    android:layout_height="wrap_content"
+                    android:orientation="vertical">
+                    <TextView
+                        android:layout_width="wrap_content"
+                        android:layout_height="wrap_content"
+                        android:text="VEHICLE LOCATION"
+                        android:textColor="@color/hint_text"
+                        android:textSize="9sp"
+                        android:letterSpacing="0.14" />
+                    <TextView
+                        android:id="@+id/tv_veh_location"
+                        android:layout_width="wrap_content"
+                        android:layout_height="wrap_content"
+                        android:layout_marginTop="2dp"
+                        android:fontFamily="@font/space_grotesk"
+                        android:textStyle="bold"
+                        android:text="Locating…"
+                        android:textColor="@color/text_primary"
+                        android:textSize="16sp" />
+                    <TextView
+                        android:id="@+id/tv_veh_coords"
+                        android:layout_width="wrap_content"
+                        android:layout_height="wrap_content"
+                        android:fontFamily="@font/jetbrains_mono"
+                        android:textColor="@color/secondary_text"
+                        android:textSize="11sp" />
+                </LinearLayout>
+            </LinearLayout>
+        </com.google.android.material.card.MaterialCardView>
+
+        <!-- Backend explainer -->
+        <TextView
+            android:id="@+id/tv_veh_broadcast"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:layout_marginHorizontal="20dp"
+            android:layout_marginTop="18dp"
+            android:fontFamily="@font/jetbrains_mono"
+            android:textColor="@color/secondary_text"
+            android:textSize="11sp"
+            android:lineSpacingExtra="3dp" />
+    </LinearLayout>
+</ScrollView>

@@ -189,6 +189,19 @@
                 android:background="@drawable/btn_primary" />
 
             <TextView
+                android:id="@+id/btn_intro_car"
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:layout_marginTop="12dp"
+                android:gravity="center"
+                android:paddingVertical="15dp"
+                android:fontFamily="@font/jetbrains_mono"
+                android:text="🚗  Android Auto mode"
+                android:textColor="@color/accent_green"
+                android:textSize="14sp"
+                android:background="@drawable/chip_outline" />
+
+            <TextView
                 android:id="@+id/tv_intro_footer"
                 android:layout_width="match_parent"
                 android:layout_height="wrap_content"

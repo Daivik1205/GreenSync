@@ -149,6 +149,10 @@ class DestinationPickerActivity : AppCompatActivity() {
             else      -> "Good evening."
         }
 
+        findViewById<TextView>(R.id.btn_car_mode).setOnClickListener {
+            startActivity(Intent(this, VehicleActivity::class.java))
+        }
+
         loadRecents()
         setupLists()
         setupSearch()
