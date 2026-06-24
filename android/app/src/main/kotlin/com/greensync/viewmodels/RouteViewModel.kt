@@ -3,8 +3,8 @@ package com.greensync.viewmodels
 import android.app.Application
 import androidx.lifecycle.AndroidViewModel
 import androidx.lifecycle.viewModelScope
-import com.google.android.gms.maps.model.LatLng
 import com.greensync.models.IntentPayload
+import com.greensync.models.LatLng
 import com.greensync.models.Route
 import com.greensync.models.VehicleType
 import com.greensync.services.MqttIntentService

@@ -1,0 +1,123 @@
+<?xml version="1.0" encoding="utf-8"?>
+<LinearLayout
+    xmlns:android="http://schemas.android.com/apk/res/android"
+    android:layout_width="match_parent"
+    android:layout_height="wrap_content"
+    android:orientation="vertical"
+    android:background="@drawable/sheet_bg"
+    android:paddingHorizontal="22dp"
+    android:paddingTop="14dp"
+    android:paddingBottom="24dp">
+
+    <!-- Grab handle -->
+    <View
+        android:layout_width="40dp"
+        android:layout_height="4dp"
+        android:layout_gravity="center_horizontal"
+        android:layout_marginBottom="18dp"
+        android:background="@color/border_hairline" />
+
+    <TextView
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:fontFamily="@font/jetbrains_mono"
+        android:text="COMMIT YOUR INTENT"
+        android:textColor="@color/accent_green"
+        android:textSize="10sp"
+        android:letterSpacing="0.18" />
+
+    <TextView
+        android:id="@+id/tv_sheet_title"
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:layout_marginTop="6dp"
+        android:fontFamily="@font/space_grotesk"
+        android:textStyle="bold"
+        android:textColor="@color/text_primary"
+        android:textSize="22sp"
+        android:letterSpacing="-0.02" />
+
+    <TextView
+        android:id="@+id/tv_sheet_eta"
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:layout_marginTop="2dp"
+        android:fontFamily="@font/jetbrains_mono"
+        android:textColor="@color/secondary_text"
+        android:textSize="13sp" />
+
+    <!-- Impact rows -->
+    <View
+        android:layout_width="match_parent"
+        android:layout_height="1dp"
+        android:layout_marginVertical="16dp"
+        android:background="@color/border_hairline" />
+
+    <TextView
+        android:id="@+id/tv_impact_help"
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:fontFamily="@font/jetbrains_mono"
+        android:textColor="@color/text_primary"
+        android:textSize="13sp"
+        android:lineSpacingExtra="3dp" />
+
+    <TextView
+        android:id="@+id/tv_impact_signals"
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:layout_marginTop="10dp"
+        android:fontFamily="@font/jetbrains_mono"
+        android:textColor="@color/text_primary"
+        android:textSize="13sp"
+        android:lineSpacingExtra="3dp" />
+
+    <TextView
+        android:id="@+id/tv_impact_eco"
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:layout_marginTop="10dp"
+        android:fontFamily="@font/jetbrains_mono"
+        android:textColor="@color/congestion_low"
+        android:textSize="13sp"
+        android:lineSpacingExtra="3dp" />
+
+    <!-- Broadcasting status (hidden until commit) -->
+    <TextView
+        android:id="@+id/tv_broadcasting"
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:layout_marginTop="16dp"
+        android:fontFamily="@font/jetbrains_mono"
+        android:textColor="@color/accent_green"
+        android:textSize="13sp"
+        android:gravity="center"
+        android:visibility="gone" />
+
+    <!-- Primary CTA -->
+    <TextView
+        android:id="@+id/btn_commit"
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:layout_marginTop="22dp"
+        android:paddingVertical="16dp"
+        android:fontFamily="@font/space_grotesk"
+        android:textStyle="bold"
+        android:text="Broadcast &amp; Start  →"
+        android:textColor="@color/surface_dark"
+        android:textSize="15sp"
+        android:gravity="center"
+        android:background="@drawable/btn_primary"
+        android:foreground="?attr/selectableItemBackground" />
+
+    <TextView
+        android:id="@+id/tv_reward_line"
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:layout_marginTop="12dp"
+        android:fontFamily="@font/jetbrains_mono"
+        android:textColor="@color/hint_text"
+        android:textSize="11sp"
+        android:gravity="center" />
+
+</LinearLayout>

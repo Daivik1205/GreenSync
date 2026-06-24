@@ -1,8 +1,15 @@
 <?xml version="1.0" encoding="utf-8"?>
 <resources>
-    <style name="Theme.GreenSync" parent="Theme.MaterialComponents.DayNight.DarkActionBar">
-        <item name="colorPrimary">@color/blue_primary</item>
-        <item name="colorPrimaryDark">#0D47A1</item>
-        <item name="colorAccent">@color/green_proceed</item>
+    <style name="Theme.GreenSync" parent="Theme.MaterialComponents.DayNight.NoActionBar">
+        <item name="colorPrimary">@color/accent_green</item>
+        <item name="colorPrimaryDark">@color/surface_dark</item>
+        <item name="colorAccent">@color/accent_green</item>
+        <item name="android:windowBackground">@color/surface_dark</item>
+        <item name="android:colorBackground">@color/surface_dark</item>
+
+        <!-- Space Grotesk as the app-wide default display face -->
+        <item name="fontFamily">@font/space_grotesk</item>
+        <item name="android:fontFamily">@font/space_grotesk</item>
+        <item name="android:textColor">@color/text_primary</item>
     </style>
 </resources>

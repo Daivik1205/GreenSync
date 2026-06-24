@@ -1,7 +1,7 @@
 package com.greensync.services
 
-import com.google.android.gms.maps.model.LatLng
 import com.google.gson.Gson
+import com.greensync.models.LatLng
 import com.google.gson.annotations.SerializedName
 import com.greensync.models.Route
 import kotlinx.coroutines.Dispatchers
@@ -25,6 +25,9 @@ class OsrmService(
 ) {
     companion object {
         private const val OSRM_BASE_URL = "https://router.project-osrm.org"
+        // The public OSRM demo server rejects larger values, so keep at 3.
+        // It still returns fewer when a trip has no distinct alternatives,
+        // and every downstream screen renders exactly that many routes.
         private const val MAX_ALTERNATIVES = 3
     }
 

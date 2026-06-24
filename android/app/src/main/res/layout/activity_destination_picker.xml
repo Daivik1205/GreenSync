@@ -1,0 +1,284 @@
+<?xml version="1.0" encoding="utf-8"?>
+<LinearLayout
+    xmlns:android="http://schemas.android.com/apk/res/android"
+    android:layout_width="match_parent"
+    android:layout_height="match_parent"
+    android:orientation="vertical"
+    android:background="@color/surface_dark">
+
+    <!-- ── Live status strip ───────────────────────────────── -->
+    <LinearLayout
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:orientation="horizontal"
+        android:gravity="center_vertical"
+        android:background="@color/surface_card"
+        android:paddingHorizontal="20dp"
+        android:paddingVertical="10dp">
+
+        <View
+            android:id="@+id/dot_live"
+            android:layout_width="8dp"
+            android:layout_height="8dp"
+            android:background="@drawable/dot_live"
+            android:layout_marginEnd="10dp" />
+
+        <TextView
+            android:id="@+id/tv_live_status"
+            android:layout_width="0dp"
+            android:layout_height="wrap_content"
+            android:layout_weight="1"
+            android:fontFamily="@font/jetbrains_mono"
+            android:textColor="@color/secondary_text"
+            android:textSize="11sp"
+            android:singleLine="true"
+            android:ellipsize="end" />
+
+        <TextView
+            android:id="@+id/btn_car_mode"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:layout_marginStart="10dp"
+            android:fontFamily="@font/jetbrains_mono"
+            android:text="🚗 CAR"
+            android:textColor="@color/accent_green"
+            android:textSize="11sp"
+            android:textStyle="bold"
+            android:paddingHorizontal="10dp"
+            android:paddingVertical="6dp"
+            android:background="@drawable/chip_outline" />
+    </LinearLayout>
+
+    <View
+        android:layout_width="match_parent"
+        android:layout_height="1dp"
+        android:background="@color/border_hairline" />
+
+    <androidx.core.widget.NestedScrollView
+        android:layout_width="match_parent"
+        android:layout_height="0dp"
+        android:layout_weight="1"
+        android:clipToPadding="false"
+        android:paddingBottom="24dp">
+
+        <LinearLayout
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:orientation="vertical">
+
+            <!-- ── Greeting block ──────────────────────────── -->
+            <TextView
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:layout_marginTop="28dp"
+                android:layout_marginHorizontal="20dp"
+                android:fontFamily="@font/jetbrains_mono"
+                android:text="GREENSYNC // BENGALURU"
+                android:textColor="@color/accent_green"
+                android:textSize="10sp"
+                android:letterSpacing="0.18" />
+
+            <TextView
+                android:id="@+id/tv_greeting"
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:layout_marginTop="6dp"
+                android:layout_marginHorizontal="20dp"
+                android:fontFamily="@font/space_grotesk"
+                android:textStyle="bold"
+                android:textColor="@color/text_primary"
+                android:textSize="32sp"
+                android:letterSpacing="-0.03" />
+
+            <!-- Origin chip -->
+            <LinearLayout
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:orientation="horizontal"
+                android:gravity="center_vertical"
+                android:layout_marginTop="12dp"
+                android:layout_marginHorizontal="20dp"
+                android:paddingHorizontal="12dp"
+                android:paddingVertical="7dp"
+                android:background="@drawable/chip_outline">
+
+                <TextView
+                    android:layout_width="wrap_content"
+                    android:layout_height="wrap_content"
+                    android:fontFamily="@font/jetbrains_mono"
+                    android:text="FROM"
+                    android:textColor="@color/hint_text"
+                    android:textSize="10sp"
+                    android:letterSpacing="0.12"
+                    android:layout_marginEnd="8dp" />
+
+                <TextView
+                    android:id="@+id/tv_origin_name"
+                    android:layout_width="wrap_content"
+                    android:layout_height="wrap_content"
+                    android:fontFamily="@font/space_grotesk"
+                    android:textStyle="bold"
+                    android:text="Locating…"
+                    android:textColor="@color/accent_green"
+                    android:textSize="13sp" />
+            </LinearLayout>
+
+            <!-- ── Search box ──────────────────────────────── -->
+            <LinearLayout
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:orientation="horizontal"
+                android:gravity="center_vertical"
+                android:layout_marginTop="22dp"
+                android:layout_marginHorizontal="20dp"
+                android:background="@drawable/search_box_bg"
+                android:paddingHorizontal="14dp">
+
+                <TextView
+                    android:layout_width="wrap_content"
+                    android:layout_height="wrap_content"
+                    android:text="🔍"
+                    android:textSize="15sp"
+                    android:layout_marginEnd="10dp" />
+
+                <EditText
+                    android:id="@+id/et_search"
+                    android:layout_width="0dp"
+                    android:layout_height="wrap_content"
+                    android:layout_weight="1"
+                    android:background="@null"
+                    android:fontFamily="@font/jetbrains_mono"
+                    android:hint="search anywhere in bengaluru…"
+                    android:textColorHint="@color/hint_text"
+                    android:textColor="@color/text_primary"
+                    android:textSize="13sp"
+                    android:inputType="text"
+                    android:imeOptions="actionSearch"
+                    android:maxLines="1"
+                    android:paddingVertical="14dp" />
+
+                <TextView
+                    android:id="@+id/btn_clear_search"
+                    android:layout_width="wrap_content"
+                    android:layout_height="wrap_content"
+                    android:text="✕"
+                    android:textColor="@color/secondary_text"
+                    android:textSize="14sp"
+                    android:paddingHorizontal="6dp"
+                    android:paddingVertical="14dp"
+                    android:visibility="gone" />
+            </LinearLayout>
+
+            <!-- ── Browse mode (recents + popular) ─────────── -->
+            <LinearLayout
+                android:id="@+id/ll_browse"
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:orientation="vertical">
+
+                <TextView
+                    android:id="@+id/tv_recent_header"
+                    android:layout_width="wrap_content"
+                    android:layout_height="wrap_content"
+                    android:layout_marginTop="26dp"
+                    android:layout_marginHorizontal="20dp"
+                    android:fontFamily="@font/jetbrains_mono"
+                    android:text="RECENT"
+                    android:textColor="@color/hint_text"
+                    android:textSize="10sp"
+                    android:letterSpacing="0.18" />
+
+                <androidx.recyclerview.widget.RecyclerView
+                    android:id="@+id/rv_recent"
+                    android:layout_width="match_parent"
+                    android:layout_height="wrap_content"
+                    android:layout_marginTop="12dp"
+                    android:clipToPadding="false"
+                    android:paddingHorizontal="20dp"
+                    android:orientation="horizontal"
+                    android:nestedScrollingEnabled="false" />
+
+                <TextView
+                    android:layout_width="wrap_content"
+                    android:layout_height="wrap_content"
+                    android:layout_marginTop="26dp"
+                    android:layout_marginHorizontal="20dp"
+                    android:fontFamily="@font/jetbrains_mono"
+                    android:text="POPULAR NOW"
+                    android:textColor="@color/hint_text"
+                    android:textSize="10sp"
+                    android:letterSpacing="0.18" />
+
+                <androidx.recyclerview.widget.RecyclerView
+                    android:id="@+id/rv_popular"
+                    android:layout_width="match_parent"
+                    android:layout_height="wrap_content"
+                    android:layout_marginTop="10dp"
+                    android:clipToPadding="false"
+                    android:paddingHorizontal="14dp"
+                    android:nestedScrollingEnabled="false" />
+            </LinearLayout>
+
+            <!-- ── Search results mode ─────────────────────── -->
+            <LinearLayout
+                android:id="@+id/ll_search"
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:orientation="vertical"
+                android:visibility="gone">
+
+                <LinearLayout
+                    android:layout_width="match_parent"
+                    android:layout_height="wrap_content"
+                    android:orientation="horizontal"
+                    android:gravity="center_vertical"
+                    android:layout_marginTop="22dp"
+                    android:layout_marginHorizontal="20dp">
+
+                    <TextView
+                        android:id="@+id/tv_results_header"
+                        android:layout_width="0dp"
+                        android:layout_weight="1"
+                        android:layout_height="wrap_content"
+                        android:fontFamily="@font/jetbrains_mono"
+                        android:text="RESULTS"
+                        android:textColor="@color/hint_text"
+                        android:textSize="10sp"
+                        android:letterSpacing="0.18" />
+
+                    <TextView
+                        android:id="@+id/tv_searching"
+                        android:layout_width="wrap_content"
+                        android:layout_height="wrap_content"
+                        android:fontFamily="@font/jetbrains_mono"
+                        android:text="searching the map…"
+                        android:textColor="@color/accent_green"
+                        android:textSize="10sp"
+                        android:letterSpacing="0.12"
+                        android:visibility="gone" />
+                </LinearLayout>
+
+                <androidx.recyclerview.widget.RecyclerView
+                    android:id="@+id/rv_results"
+                    android:layout_width="match_parent"
+                    android:layout_height="wrap_content"
+                    android:layout_marginTop="8dp"
+                    android:nestedScrollingEnabled="false" />
+
+                <TextView
+                    android:id="@+id/tv_no_results"
+                    android:layout_width="match_parent"
+                    android:layout_height="wrap_content"
+                    android:layout_marginTop="40dp"
+                    android:fontFamily="@font/jetbrains_mono"
+                    android:text="no places match that search"
+                    android:textColor="@color/hint_text"
+                    android:textSize="13sp"
+                    android:gravity="center"
+                    android:visibility="gone" />
+            </LinearLayout>
+
+        </LinearLayout>
+    </androidx.core.widget.NestedScrollView>
+
+</LinearLayout>

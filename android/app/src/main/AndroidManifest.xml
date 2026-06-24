@@ -5,6 +5,7 @@
     <uses-permission android:name="android.permission.ACCESS_FINE_LOCATION" />
     <uses-permission android:name="android.permission.ACCESS_COARSE_LOCATION" />
     <uses-permission android:name="android.permission.FOREGROUND_SERVICE" />
+    <uses-permission android:name="android.permission.FOREGROUND_SERVICE_DATA_SYNC" />
     <!-- Car permission — required for CarPropertyManager access on AAOS -->
     <uses-permission android:name="android.car.permission.CAR_SPEED" />
     <uses-permission android:name="android.car.permission.CAR_ENERGY" />
@@ -12,19 +13,40 @@
     <application
         android:name=".GreenSyncApp"
         android:label="GreenSync"
-        android:icon="@mipmap/ic_launcher"
+        android:icon="@drawable/ic_launcher"
         android:theme="@style/Theme.GreenSync"
         android:allowBackup="true">
 
-        <!-- Phone entry point -->
+        <!-- Phone entry point — introduction / home screen -->
         <activity
-            android:name=".MainActivity"
+            android:name=".screens.IntroActivity"
             android:exported="true">
             <intent-filter>
                 <action android:name="android.intent.action.MAIN" />
                 <category android:name="android.intent.category.LAUNCHER" />
             </intent-filter>
         </activity>
+
+        <!-- Permission + service bootstrap, then destination picker -->
+        <activity
+            android:name=".MainActivity"
+            android:exported="false" />
+
+        <activity
+            android:name=".screens.DestinationPickerActivity"
+            android:exported="false" />
+
+        <activity
+            android:name=".screens.RouteSelectionActivity"
+            android:exported="false" />
+
+        <activity
+            android:name=".screens.HUDActivity"
+            android:exported="false" />
+
+        <activity
+            android:name=".screens.VehicleActivity"
+            android:exported="false" />
 
         <!-- Android Auto Car App Service -->
         <service
@@ -41,20 +63,16 @@
         <service
             android:name=".services.MqttIntentService"
             android:exported="false"
-            android:foregroundServiceType="connectedDevice" />
+            android:foregroundServiceType="dataSync" />
 
         <!-- ECU telemetry service (runs only on AAOS) -->
         <service
             android:name=".services.EcuTelemetryService"
             android:exported="false"
-            android:foregroundServiceType="connectedDevice" />
+            android:foregroundServiceType="dataSync" />
 
         <!-- Paho MQTT Android service -->
         <service android:name="org.eclipse.paho.android.service.MqttService" />
-
-        <meta-data
-            android:name="com.google.android.geo.API_KEY"
-            android:value="${MAPS_API_KEY}" />
 
         <!-- Car App API level declaration -->
         <meta-data

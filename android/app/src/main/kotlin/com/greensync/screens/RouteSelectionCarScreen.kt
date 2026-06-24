@@ -8,8 +8,8 @@ import androidx.car.app.model.ItemList
 import androidx.car.app.model.ListTemplate
 import androidx.car.app.model.Row
 import androidx.car.app.model.Template
-import com.google.android.gms.maps.model.LatLng
 import com.greensync.models.IntentPayload
+import com.greensync.models.LatLng
 import com.greensync.models.Route
 import com.greensync.services.MqttIntentService
 import com.greensync.services.OsrmService

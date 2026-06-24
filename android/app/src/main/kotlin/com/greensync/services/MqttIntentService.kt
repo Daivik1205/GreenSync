@@ -13,12 +13,13 @@ import com.google.gson.Gson
 import com.greensync.R
 import com.greensync.models.EcuTelemetryPayload
 import com.greensync.models.IntentPayload
-import com.greensync.models.Route
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.SupervisorJob
 import kotlinx.coroutines.cancel
 import kotlinx.coroutines.launch
+import org.eclipse.paho.client.mqttv3.IMqttDeliveryToken
+import org.eclipse.paho.client.mqttv3.MqttCallbackExtended
 import org.eclipse.paho.client.mqttv3.MqttClient
 import org.eclipse.paho.client.mqttv3.MqttConnectOptions
 import org.eclipse.paho.client.mqttv3.MqttMessage
@@ -26,20 +27,6 @@ import org.eclipse.paho.client.mqttv3.persist.MemoryPersistence
 
 /**
  * Foreground service that maintains a persistent MQTT connection.
- *
- * Responsibilities:
- *   1. Publishes route intent when user selects a route.
- *   2. Publishes ECU telemetry (speed, fuel/battery) on demand from EcuTelemetryService.
- *   3. Subscribes to greensyncq/rsu/+/state and greensyncq/signal/+/phase
- *      to update the local HUD state.
- *
- * Topics published:
- *   greensync/user/intent       — IntentPayload (JSON)
- *   greensync/ecu/telemetry     — EcuTelemetryPayload (JSON)
- *
- * Topics subscribed:
- *   greensyncq/rsu/+/state      — zone congestion state
- *   greensyncq/signal/+/phase   — signal timing
  */
 class MqttIntentService : Service() {
 
@@ -47,7 +34,7 @@ class MqttIntentService : Service() {
         private const val TAG            = "MqttIntentService"
         private const val CHANNEL_ID     = "greensync_mqtt"
         private const val NOTIF_ID       = 1001
-        private const val BROKER_URI     = "tcp://192.168.1.100:1883"   // configure per deployment
+        private const val BROKER_URI     = "tcp://10.0.2.2:1883"   // Android emulator → host localhost
         private const val CLIENT_ID_PREFIX = "greensync_android_"
 
         const val ACTION_PUBLISH_INTENT    = "com.greensync.PUBLISH_INTENT"
@@ -105,40 +92,49 @@ class MqttIntentService : Service() {
 
     override fun onBind(intent: Intent?): IBinder? = null
 
-    // ── MQTT connection ───────────────────────────────────────────────────────
-
     private fun connectMqtt() {
         val clientId = CLIENT_ID_PREFIX + System.currentTimeMillis()
-        val client   = MqttClient(BROKER_URI, clientId, MemoryPersistence())
-        val options  = MqttConnectOptions().apply {
-            isCleanSession    = true
-            connectionTimeout = 10
-            keepAliveInterval = 30
-            isAutomaticReconnect = true
-        }
-
         try {
+            val client = MqttClient(BROKER_URI, clientId, MemoryPersistence())
+            client.setCallback(object : MqttCallbackExtended {
+                override fun connectComplete(reconnect: Boolean, serverURI: String?) {
+                    Log.i(TAG, "MQTT ${if (reconnect) "re" else ""}connected to $serverURI")
+                    subscribeToIncoming(client)
+                }
+                override fun messageArrived(topic: String, message: MqttMessage) {
+                    val broadcastIntent = Intent("com.greensync.MQTT_MESSAGE").apply {
+                        putExtra("topic", topic)
+                        putExtra("payload", String(message.payload))
+                    }
+                    sendBroadcast(broadcastIntent)
+                    Log.d(TAG, "Broadcast sent for topic: $topic")
+                }
+                override fun connectionLost(cause: Throwable?) {
+                    Log.w(TAG, "MQTT connection lost: ${cause?.message}")
+                }
+                override fun deliveryComplete(token: IMqttDeliveryToken?) {}
+            })
+            val options = MqttConnectOptions().apply {
+                isCleanSession    = true
+                connectionTimeout = 10
+                keepAliveInterval = 30
+                isAutomaticReconnect = true
+            }
             client.connect(options)
             mqttClient = client
-            Log.i(TAG, "MQTT connected to $BROKER_URI")
-            subscribeToIncoming(client)
         } catch (e: Exception) {
             Log.e(TAG, "MQTT connect failed: ${e.message}")
         }
     }
 
     private fun subscribeToIncoming(client: MqttClient) {
-        val topics = arrayOf("greensyncq/rsu/+/state", "greensyncq/signal/+/phase")
-        val qos    = intArrayOf(0, 0)
-        client.subscribe(topics, qos) { topic, message ->
-            // Broadcast locally so UI layers can consume without their own MQTT client
-            val broadcastIntent = Intent("com.greensync.MQTT_MESSAGE").apply {
-                putExtra("topic",   topic)
-                putExtra("payload", String(message.payload))
-            }
-            sendBroadcast(broadcastIntent)
+        try {
+            client.subscribe(arrayOf("greensyncq/rsu/+/state", "greensyncq/signal/+/phase"),
+                             intArrayOf(0, 0))
+            Log.i(TAG, "Subscribed to RSU and signal topics")
+        } catch (e: Exception) {
+            Log.e(TAG, "Subscription failed: ${e.message}")
         }
-        Log.d(TAG, "Subscribed to RSU state and signal phase topics")
     }
 
     private fun publish(topic: String, json: String) {
@@ -147,13 +143,10 @@ class MqttIntentService : Service() {
         val message = MqttMessage(json.toByteArray(Charsets.UTF_8)).apply { qos = 1 }
         try {
             client.publish(topic, message)
-            Log.d(TAG, "Published to $topic: ${json.take(120)}")
         } catch (e: Exception) {
-            Log.w(TAG, "Publish failed on $topic: ${e.message}")
+            Log.w(TAG, "Publish failed: ${e.message}")
         }
     }
-
-    // ── Notification (required for foreground service) ────────────────────────
 
     private fun createNotificationChannel() {
         val channel = NotificationChannel(

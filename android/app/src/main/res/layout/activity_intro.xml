@@ -1,0 +1,216 @@
+<?xml version="1.0" encoding="utf-8"?>
+<FrameLayout
+    xmlns:android="http://schemas.android.com/apk/res/android"
+    android:layout_width="match_parent"
+    android:layout_height="match_parent"
+    android:background="@color/surface_dark">
+
+    <!-- Radial glow behind the wordmark -->
+    <View
+        android:id="@+id/hero_glow"
+        android:layout_width="360dp"
+        android:layout_height="360dp"
+        android:layout_gravity="center_horizontal"
+        android:layout_marginTop="40dp"
+        android:background="@drawable/hero_glow" />
+
+    <ScrollView
+        android:layout_width="match_parent"
+        android:layout_height="match_parent"
+        android:fillViewport="true">
+
+        <LinearLayout
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:orientation="vertical"
+            android:paddingHorizontal="28dp"
+            android:paddingTop="64dp"
+            android:paddingBottom="32dp">
+
+            <!-- Live pill -->
+            <LinearLayout
+                android:id="@+id/intro_live_pill"
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:orientation="horizontal"
+                android:gravity="center_vertical"
+                android:paddingHorizontal="12dp"
+                android:paddingVertical="7dp"
+                android:background="@drawable/chip_outline">
+
+                <View
+                    android:id="@+id/intro_dot"
+                    android:layout_width="8dp"
+                    android:layout_height="8dp"
+                    android:background="@drawable/dot_live"
+                    android:layout_marginEnd="9dp" />
+
+                <TextView
+                    android:id="@+id/tv_intro_live"
+                    android:layout_width="wrap_content"
+                    android:layout_height="wrap_content"
+                    android:fontFamily="@font/jetbrains_mono"
+                    android:text="LIVE — booting digital twin…"
+                    android:textColor="@color/secondary_text"
+                    android:textSize="11sp" />
+            </LinearLayout>
+
+            <!-- Wordmark -->
+            <TextView
+                android:id="@+id/tv_intro_kicker"
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:layout_marginTop="40dp"
+                android:fontFamily="@font/jetbrains_mono"
+                android:text="EDGE-AI · V2I · BENGALURU"
+                android:textColor="@color/accent_green"
+                android:textSize="11sp"
+                android:letterSpacing="0.22" />
+
+            <TextView
+                android:id="@+id/tv_intro_title"
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:layout_marginTop="10dp"
+                android:fontFamily="@font/space_grotesk"
+                android:textStyle="bold"
+                android:text="GreenSync"
+                android:textColor="@color/text_primary"
+                android:textSize="58sp"
+                android:letterSpacing="-0.04" />
+
+            <TextView
+                android:id="@+id/tv_intro_tagline"
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:layout_marginTop="6dp"
+                android:fontFamily="@font/space_grotesk"
+                android:text="Your route, in sync with the whole city. Crowdsourced traffic meets a live digital twin — so every turn helps the network breathe."
+                android:textColor="@color/secondary_text"
+                android:textSize="15sp"
+                android:lineSpacingExtra="3dp" />
+
+            <!-- Feature highlights -->
+            <LinearLayout
+                android:id="@+id/intro_feature_1"
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:orientation="horizontal"
+                android:gravity="center_vertical"
+                android:layout_marginTop="34dp">
+                <TextView
+                    android:layout_width="46dp"
+                    android:layout_height="46dp"
+                    android:gravity="center"
+                    android:text="🛰️"
+                    android:textSize="20sp"
+                    android:background="@drawable/feature_icon_bg" />
+                <LinearLayout
+                    android:layout_width="0dp"
+                    android:layout_weight="1"
+                    android:layout_height="wrap_content"
+                    android:orientation="vertical"
+                    android:layout_marginStart="14dp">
+                    <TextView android:layout_width="wrap_content" android:layout_height="wrap_content" android:fontFamily="@font/space_grotesk" android:textStyle="bold" android:text="Crowdsourced live routing" android:textColor="@color/text_primary" android:textSize="15sp" />
+                    <TextView android:layout_width="wrap_content" android:layout_height="wrap_content" android:text="Real commuter intents blended into A* routing" android:textColor="@color/hint_text" android:textSize="12sp" />
+                </LinearLayout>
+            </LinearLayout>
+
+            <LinearLayout
+                android:id="@+id/intro_feature_2"
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:orientation="horizontal"
+                android:gravity="center_vertical"
+                android:layout_marginTop="16dp">
+                <TextView
+                    android:layout_width="46dp"
+                    android:layout_height="46dp"
+                    android:gravity="center"
+                    android:text="🚦"
+                    android:textSize="20sp"
+                    android:background="@drawable/feature_icon_bg" />
+                <LinearLayout
+                    android:layout_width="0dp"
+                    android:layout_weight="1"
+                    android:layout_height="wrap_content"
+                    android:orientation="vertical"
+                    android:layout_marginStart="14dp">
+                    <TextView android:layout_width="wrap_content" android:layout_height="wrap_content" android:fontFamily="@font/space_grotesk" android:textStyle="bold" android:text="V2I green-wave signals" android:textColor="@color/text_primary" android:textSize="15sp" />
+                    <TextView android:layout_width="wrap_content" android:layout_height="wrap_content" android:text="Know the next red light before you reach it" android:textColor="@color/hint_text" android:textSize="12sp" />
+                </LinearLayout>
+            </LinearLayout>
+
+            <LinearLayout
+                android:id="@+id/intro_feature_3"
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:orientation="horizontal"
+                android:gravity="center_vertical"
+                android:layout_marginTop="16dp">
+                <TextView
+                    android:layout_width="46dp"
+                    android:layout_height="46dp"
+                    android:gravity="center"
+                    android:text="🌐"
+                    android:textSize="20sp"
+                    android:background="@drawable/feature_icon_bg" />
+                <LinearLayout
+                    android:layout_width="0dp"
+                    android:layout_weight="1"
+                    android:layout_height="wrap_content"
+                    android:orientation="vertical"
+                    android:layout_marginStart="14dp">
+                    <TextView android:layout_width="wrap_content" android:layout_height="wrap_content" android:fontFamily="@font/space_grotesk" android:textStyle="bold" android:text="SUMO digital-twin mirror" android:textColor="@color/text_primary" android:textSize="15sp" />
+                    <TextView android:layout_width="wrap_content" android:layout_height="wrap_content" android:text="Your trip runs as a shadow vehicle in simulation" android:textColor="@color/hint_text" android:textSize="12sp" />
+                </LinearLayout>
+            </LinearLayout>
+
+            <!-- spacer to push CTA down -->
+            <Space
+                android:layout_width="match_parent"
+                android:layout_height="0dp"
+                android:layout_weight="1"
+                android:minHeight="28dp" />
+
+            <!-- CTA -->
+            <TextView
+                android:id="@+id/btn_enter"
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:layout_marginTop="28dp"
+                android:gravity="center"
+                android:paddingVertical="17dp"
+                android:fontFamily="@font/space_grotesk"
+                android:textStyle="bold"
+                android:text="Enter GreenSync  →"
+                android:textColor="@color/surface_dark"
+                android:textSize="16sp"
+                android:background="@drawable/btn_primary" />
+
+            <TextView
+                android:id="@+id/btn_intro_car"
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:layout_marginTop="12dp"
+                android:gravity="center"
+                android:paddingVertical="15dp"
+                android:fontFamily="@font/jetbrains_mono"
+                android:text="🚗  Android Auto mode"
+                android:textColor="@color/accent_green"
+                android:textSize="14sp"
+                android:background="@drawable/chip_outline" />
+
+            <TextView
+                android:id="@+id/tv_intro_footer"
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:layout_marginTop="14dp"
+                android:gravity="center"
+                android:fontFamily="@font/jetbrains_mono"
+                android:text="tap to set your destination · location used for origin"
+                android:textColor="@color/hint_text"
+                android:textSize="10sp" />
+        </LinearLayout>
+    </ScrollView>
+</FrameLayout>

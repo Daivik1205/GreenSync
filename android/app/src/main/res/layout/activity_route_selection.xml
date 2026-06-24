@@ -3,18 +3,18 @@
     xmlns:android="http://schemas.android.com/apk/res/android"
     xmlns:app="http://schemas.android.com/apk/res-auto"
     android:layout_width="match_parent"
-    android:layout_height="match_parent">
+    android:layout_height="match_parent"
+    android:background="@color/surface_dark">
 
-    <!-- Google Map occupies top 60% -->
-    <fragment
-        android:id="@+id/map_fragment"
-        android:name="com.google.android.gms.maps.SupportMapFragment"
+    <!-- OSM Map: top 58% -->
+    <org.osmdroid.views.MapView
+        android:id="@+id/map_view"
         android:layout_width="0dp"
         android:layout_height="0dp"
         app:layout_constraintTop_toTopOf="parent"
         app:layout_constraintStart_toStartOf="parent"
         app:layout_constraintEnd_toEndOf="parent"
-        app:layout_constraintBottom_toTopOf="@+id/bottom_sheet" />
+        app:layout_constraintBottom_toTopOf="@+id/bottom_panel" />
 
     <ProgressBar
         android:id="@+id/progress_bar"
@@ -22,35 +22,190 @@
         android:layout_height="wrap_content"
         android:visibility="gone"
         app:layout_constraintTop_toTopOf="parent"
-        app:layout_constraintBottom_toTopOf="@+id/bottom_sheet"
+        app:layout_constraintBottom_toTopOf="@+id/bottom_panel"
         app:layout_constraintStart_toStartOf="parent"
         app:layout_constraintEnd_toEndOf="parent" />
 
-    <!-- Route cards bottom sheet -->
+    <!-- Bottom panel -->
     <LinearLayout
-        android:id="@+id/bottom_sheet"
+        android:id="@+id/bottom_panel"
         android:layout_width="0dp"
         android:layout_height="0dp"
         android:orientation="vertical"
-        android:background="@color/white"
+        android:background="@color/surface_dark"
         app:layout_constraintBottom_toBottomOf="parent"
         app:layout_constraintStart_toStartOf="parent"
         app:layout_constraintEnd_toEndOf="parent"
-        app:layout_constraintHeight_percent="0.40">
+        app:layout_constraintHeight_percent="0.54">
 
-        <TextView
+        <!-- Header -->
+        <LinearLayout
             android:layout_width="match_parent"
             android:layout_height="wrap_content"
-            android:text="Choose your route"
-            android:textSize="16sp"
-            android:textStyle="bold"
-            android:padding="16dp" />
+            android:orientation="vertical"
+            android:paddingHorizontal="16dp"
+            android:paddingTop="14dp"
+            android:paddingBottom="8dp">
+
+            <!-- Origin → Destination + GreenPoints -->
+            <LinearLayout
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:orientation="horizontal"
+                android:gravity="center_vertical">
+
+                <TextView
+                    android:id="@+id/tv_route_header"
+                    android:layout_width="0dp"
+                    android:layout_weight="1"
+                    android:layout_height="wrap_content"
+                    android:fontFamily="@font/space_grotesk"
+                    android:textColor="@color/text_primary"
+                    android:textSize="18sp"
+                    android:textStyle="bold"
+                    android:letterSpacing="-0.02" />
+
+                <TextView
+                    android:id="@+id/tv_green_points"
+                    android:layout_width="wrap_content"
+                    android:layout_height="wrap_content"
+                    android:paddingHorizontal="10dp"
+                    android:paddingVertical="5dp"
+                    android:fontFamily="@font/jetbrains_mono"
+                    android:textSize="12sp"
+                    android:textStyle="bold"
+                    android:textColor="@color/accent_green"
+                    android:background="@drawable/chip_outline" />
+            </LinearLayout>
+
+            <!-- Network optimisation readout -->
+            <TextView
+                android:id="@+id/tv_network_status"
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:layout_marginTop="4dp"
+                android:fontFamily="@font/jetbrains_mono"
+                android:textColor="@color/secondary_text"
+                android:textSize="11sp" />
+
+            <!-- Optimisation mode chips -->
+            <HorizontalScrollView
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:layout_marginTop="12dp"
+                android:scrollbars="none">
+
+                <LinearLayout
+                    android:id="@+id/ll_modes"
+                    android:layout_width="wrap_content"
+                    android:layout_height="wrap_content"
+                    android:orientation="horizontal">
+
+                    <TextView
+                        android:id="@+id/chip_balanced"
+                        android:layout_width="wrap_content"
+                        android:layout_height="wrap_content"
+                        android:layout_marginEnd="8dp"
+                        android:paddingHorizontal="14dp"
+                        android:paddingVertical="8dp"
+                        android:fontFamily="@font/jetbrains_mono"
+                        android:text="🎯 Balanced"
+                        android:textSize="12sp"
+                        android:background="@drawable/chip_outline" />
+
+                    <TextView
+                        android:id="@+id/chip_fastest"
+                        android:layout_width="wrap_content"
+                        android:layout_height="wrap_content"
+                        android:layout_marginEnd="8dp"
+                        android:paddingHorizontal="14dp"
+                        android:paddingVertical="8dp"
+                        android:fontFamily="@font/jetbrains_mono"
+                        android:text="⚡ Fastest"
+                        android:textSize="12sp"
+                        android:background="@drawable/chip_outline" />
+
+                    <TextView
+                        android:id="@+id/chip_greenest"
+                        android:layout_width="wrap_content"
+                        android:layout_height="wrap_content"
+                        android:layout_marginEnd="8dp"
+                        android:paddingHorizontal="14dp"
+                        android:paddingVertical="8dp"
+                        android:fontFamily="@font/jetbrains_mono"
+                        android:text="🍃 Greenest"
+                        android:textSize="12sp"
+                        android:background="@drawable/chip_outline" />
+
+                    <TextView
+                        android:id="@+id/chip_smoothest"
+                        android:layout_width="wrap_content"
+                        android:layout_height="wrap_content"
+                        android:paddingHorizontal="14dp"
+                        android:paddingVertical="8dp"
+                        android:fontFamily="@font/jetbrains_mono"
+                        android:text="🌊 Smoothest"
+                        android:textSize="12sp"
+                        android:background="@drawable/chip_outline" />
+                </LinearLayout>
+            </HorizontalScrollView>
+
+            <TextView
+                android:id="@+id/tv_total_users"
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:layout_marginTop="8dp"
+                android:fontFamily="@font/jetbrains_mono"
+                android:textColor="@color/hint_text"
+                android:textSize="11sp" />
+        </LinearLayout>
+
+        <!-- Live community alert ticker -->
+        <LinearLayout
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:orientation="horizontal"
+            android:gravity="center_vertical"
+            android:paddingStart="12dp"
+            android:paddingEnd="0dp"
+            android:paddingVertical="6dp"
+            android:background="#0D0D0D">
+
+            <TextView
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:text="LIVE"
+                android:textColor="#43A047"
+                android:textSize="9sp"
+                android:textStyle="bold"
+                android:letterSpacing="0.1"
+                android:paddingHorizontal="5dp"
+                android:paddingVertical="2dp"
+                android:background="#1A2E1A"
+                android:layout_marginEnd="8dp" />
+
+            <TextView
+                android:id="@+id/tv_ticker"
+                android:layout_width="0dp"
+                android:layout_height="wrap_content"
+                android:layout_weight="1"
+                android:singleLine="true"
+                android:ellipsize="marquee"
+                android:marqueeRepeatLimit="marquee_forever"
+                android:focusable="true"
+                android:scrollHorizontally="true"
+                android:textColor="@color/secondary_text"
+                android:textSize="11sp"
+                android:paddingEnd="16dp" />
+        </LinearLayout>
 
         <androidx.recyclerview.widget.RecyclerView
             android:id="@+id/rv_routes"
             android:layout_width="match_parent"
             android:layout_height="0dp"
-            android:layout_weight="1" />
+            android:layout_weight="1"
+            android:clipToPadding="false"
+            android:paddingBottom="8dp" />
     </LinearLayout>
 
 </androidx.constraintlayout.widget.ConstraintLayout>
