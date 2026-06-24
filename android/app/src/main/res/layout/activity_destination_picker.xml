@@ -213,17 +213,36 @@
                 android:orientation="vertical"
                 android:visibility="gone">
 
-                <TextView
-                    android:id="@+id/tv_results_header"
-                    android:layout_width="wrap_content"
+                <LinearLayout
+                    android:layout_width="match_parent"
                     android:layout_height="wrap_content"
+                    android:orientation="horizontal"
+                    android:gravity="center_vertical"
                     android:layout_marginTop="22dp"
-                    android:layout_marginHorizontal="20dp"
-                    android:fontFamily="@font/jetbrains_mono"
-                    android:text="RESULTS"
-                    android:textColor="@color/hint_text"
-                    android:textSize="10sp"
-                    android:letterSpacing="0.18" />
+                    android:layout_marginHorizontal="20dp">
+
+                    <TextView
+                        android:id="@+id/tv_results_header"
+                        android:layout_width="0dp"
+                        android:layout_weight="1"
+                        android:layout_height="wrap_content"
+                        android:fontFamily="@font/jetbrains_mono"
+                        android:text="RESULTS"
+                        android:textColor="@color/hint_text"
+                        android:textSize="10sp"
+                        android:letterSpacing="0.18" />
+
+                    <TextView
+                        android:id="@+id/tv_searching"
+                        android:layout_width="wrap_content"
+                        android:layout_height="wrap_content"
+                        android:fontFamily="@font/jetbrains_mono"
+                        android:text="searching the map…"
+                        android:textColor="@color/accent_green"
+                        android:textSize="10sp"
+                        android:letterSpacing="0.12"
+                        android:visibility="gone" />
+                </LinearLayout>
 
                 <androidx.recyclerview.widget.RecyclerView
                     android:id="@+id/rv_results"

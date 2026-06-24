@@ -28,7 +28,10 @@ import androidx.recyclerview.widget.GridLayoutManager
 import androidx.recyclerview.widget.LinearLayoutManager
 import androidx.recyclerview.widget.RecyclerView
 import com.greensync.R
+import com.greensync.services.GeocodingService
 import kotlinx.coroutines.Dispatchers
+import kotlinx.coroutines.Job
+import kotlinx.coroutines.delay
 import kotlinx.coroutines.launch
 import kotlinx.coroutines.withContext
 import java.util.Calendar
@@ -122,6 +125,9 @@ class DestinationPickerActivity : AppCompatActivity() {
     private var commuters = 1042
     private var reports   = 38
 
+    private val geocoder = GeocodingService()
+    private var searchJob: Job? = null
+
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
         setContentView(R.layout.activity_destination_picker)
@@ -201,7 +207,6 @@ class DestinationPickerActivity : AppCompatActivity() {
         val clear   = findViewById<TextView>(R.id.btn_clear_search)
         val browse  = findViewById<View>(R.id.ll_browse)
         val search  = findViewById<View>(R.id.ll_search)
-        val noRes   = findViewById<View>(R.id.tv_no_results)
 
         et.addTextChangedListener(object : TextWatcher {
             override fun beforeTextChanged(s: CharSequence?, a: Int, b: Int, c: Int) {}
@@ -209,6 +214,7 @@ class DestinationPickerActivity : AppCompatActivity() {
             override fun afterTextChanged(s: Editable?) {
                 val q = s?.toString()?.trim().orEmpty()
                 if (q.isEmpty()) {
+                    searchJob?.cancel()
                     clear.visibility  = View.GONE
                     browse.visibility = View.VISIBLE
                     search.visibility = View.GONE
@@ -216,11 +222,7 @@ class DestinationPickerActivity : AppCompatActivity() {
                     clear.visibility  = View.VISIBLE
                     browse.visibility = View.GONE
                     search.visibility = View.VISIBLE
-                    val matches = CATALOG.filter {
-                        it.name.contains(q, true) || it.area.contains(q, true)
-                    }
-                    resultsAdapter.submit(matches)
-                    noRes.visibility = if (matches.isEmpty()) View.VISIBLE else View.GONE
+                    runSearch(q)
                 }
             }
         })
@@ -230,6 +232,40 @@ class DestinationPickerActivity : AppCompatActivity() {
             et.clearFocus()
             (getSystemService(INPUT_METHOD_SERVICE) as InputMethodManager)
                 .hideSoftInputFromWindow(et.windowToken, 0)
+        }
+    }
+
+    /**
+     * Shows instant matches from the local catalog, then debounces a live
+     * Nominatim (OSM) lookup so any place/address on the map can be found.
+     */
+    private fun runSearch(query: String) {
+        val noRes     = findViewById<View>(R.id.tv_no_results)
+        val searching = findViewById<View>(R.id.tv_searching)
+
+        // 1. Instant local matches — keeps the UI responsive while we hit the network.
+        val local = CATALOG.filter { it.name.contains(query, true) || it.area.contains(query, true) }
+        resultsAdapter.submit(local)
+        noRes.visibility = View.GONE
+
+        searchJob?.cancel()
+        searchJob = lifecycleScope.launch {
+            delay(350)                       // debounce keystrokes
+            searching.visibility = View.VISIBLE
+            val remote = geocoder.search(query)
+            searching.visibility = View.GONE
+
+            // Merge: local matches first, then geocoded results not already shown.
+            val merged = local.toMutableList()
+            val seen   = local.map { it.name.lowercase() to it.area.lowercase() }.toMutableSet()
+            for (r in remote) {
+                val key = r.name.lowercase() to r.area.lowercase()
+                if (seen.add(key)) {
+                    merged.add(Place(r.name, r.area, r.emoji, r.lat, r.lng))
+                }
+            }
+            resultsAdapter.submit(merged)
+            noRes.visibility = if (merged.isEmpty()) View.VISIBLE else View.GONE
         }
     }
 
