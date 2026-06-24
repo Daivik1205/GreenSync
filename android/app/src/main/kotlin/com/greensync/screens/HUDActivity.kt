@@ -27,6 +27,7 @@ import org.osmdroid.util.GeoPoint
 import org.osmdroid.views.MapView
 import org.osmdroid.views.overlay.Marker
 import org.osmdroid.views.overlay.Polyline
+import java.util.Locale
 import kotlin.math.max
 import kotlin.random.Random
 
@@ -90,19 +91,19 @@ class HUDActivity : AppCompatActivity() {
     private lateinit var cmpBars:   Array<ProgressBar>
     private lateinit var cmpCountViews: Array<TextView>
 
-    // Signals along the chosen route
-    private data class RoadSignal(
-        val name:    String,
-        val posKm:   Double,
-        val green:   Int,      // green phase length (s)
-        val red:     Int,      // red phase length (s)
-        val offset:  Int,      // phase offset (s) — how green-wave aligned it is
-        val synced:  Boolean,  // GreenSync has synced this junction into the wave
-    )
-    private val routeSignals = mutableListOf<RoadSignal>()
-    private var traveledKm = 0.0
-    private var cruiseSpeed = 30
-    private var simClock    = 0   // seconds since arriving on route
+    // Nearest traffic signal to the destination (a single, fixed junction)
+    private enum class Phase(val label: String, val color: String, val next: String) {
+        RED("🔴 RED",   "#FF5247", "to green"),
+        GREEN("🟢 GREEN", "#2DE371", "to amber"),
+        AMBER("🟡 AMBER", "#FFB300", "to red"),
+    }
+    private var redLen   = 60
+    private var greenLen = 40
+    private val amberLen = 4
+    private var phase    = Phase.RED
+    private var phaseRemaining = 60
+    private var signalName   = "Junction"
+    private var signalSynced = true
 
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
@@ -167,8 +168,11 @@ class HUDActivity : AppCompatActivity() {
         val totalActive = allCounts.sum() + 1
         setupReportButtons(totalActive)
 
-        // V2I next-red-light advisory along the chosen route
-        startSignalAdvisory(distance, if (speed > 0) speed else expectedSpeed(updatedCount), destName)
+        // Nearest traffic signal to the destination — cycles red → green → amber
+        startNearestSignal(destName, updatedCount)
+
+        // Live destination context (arrival clock, AQI, weather, parking)
+        startDestinationPulse(destName, eta)
 
         // SUMO digital-twin savings (your route vs the busiest static baseline)
         renderRouteSavings(updatedCount, allCounts, eta, speed, distance)
@@ -360,7 +364,7 @@ class HUDActivity : AppCompatActivity() {
         }
     }
 
-    // ── V2I next-red-light advisory ──────────────────────────────────────────
+    // ── Nearest traffic signal to the destination ────────────────────────────
 
     private val junctionPool = listOf(
         "Hebbal Flyover", "Mekhri Circle", "Cauvery Jn", "Windsor Manor",
@@ -369,57 +373,51 @@ class HUDActivity : AppCompatActivity() {
         "Madiwala Check", "BTM Signal", "Banaswadi Jn", "Hennur Cross",
     )
 
-    private fun startSignalAdvisory(distanceKm: Double, speed: Int, destName: String) {
-        cruiseSpeed = speed.coerceIn(12, 70)
-        buildSignals(distanceKm)
-        renderSignalAdvisory(destName)
+    /**
+     * Picks the single nearest junction to the destination (stable per place)
+     * and runs its real signal cycle: RED → GREEN → AMBER → RED, with the
+     * countdown showing seconds left in the current phase. No vehicle movement.
+     */
+    private fun startNearestSignal(destName: String, count: Int) {
+        // Stable choice so the same destination always maps to the same junction.
+        signalName   = junctionPool[(destName.hashCode() and 0x7fffffff) % junctionPool.size]
+        signalSynced = (destName.hashCode() and 0x7fffffff) % 100 < 70
 
+        // Busier corridors hold red longer / green shorter.
+        when {
+            count > 500 -> { redLen = 75; greenLen = 30 }
+            count > 150 -> { redLen = 60; greenLen = 40 }
+            else        -> { redLen = 45; greenLen = 50 }
+        }
+        // Start somewhere in the cycle so it doesn't always begin at full red.
+        phase = Phase.RED
+        phaseRemaining = Random.nextInt(8, redLen)
+
+        renderSignal(destName)
         lifecycleScope.launch {
             while (true) {
                 delay(1000)
-                simClock++
-                // Advance the car along the route (time-accelerated ~25× for the demo).
-                traveledKm += cruiseSpeed / 3600.0 * 25.0
-                renderSignalAdvisory(destName)
+                phaseRemaining--
+                if (phaseRemaining <= 0) advancePhase()
+                renderSignal(destName)
             }
         }
     }
 
-    /** Place signals every ~1.8 km along the route, each on its own phase cycle. */
-    private fun buildSignals(distanceKm: Double) {
-        routeSignals.clear()
-        if (distanceKm <= 0) return
-        val spacing = 1.8
-        var pos = spacing * (0.5 + Random.nextDouble() * 0.4)
-        val names = junctionPool.shuffled()
-        var n = 0
-        while (pos < distanceKm && n < names.size) {
-            // Heavier corridors green-wave fewer signals.
-            val synced = Random.nextInt(100) < 70
-            routeSignals.add(
-                RoadSignal(
-                    name   = names[n],
-                    posKm  = pos,
-                    green  = if (synced) Random.nextInt(28, 42) else Random.nextInt(18, 28),
-                    red    = if (synced) Random.nextInt(18, 30) else Random.nextInt(30, 48),
-                    offset = Random.nextInt(0, 60),
-                    synced = synced,
-                )
-            )
-            pos += spacing * (0.8 + Random.nextDouble() * 0.6)
-            n++
+    private fun advancePhase() {
+        phase = when (phase) {
+            Phase.RED   -> Phase.GREEN
+            Phase.GREEN -> Phase.AMBER
+            Phase.AMBER -> Phase.RED
+        }
+        phaseRemaining = when (phase) {
+            Phase.RED   -> redLen
+            Phase.GREEN -> greenLen
+            Phase.AMBER -> amberLen
         }
     }
 
-    /** Returns (isGreen, secondsUntilChange) for a signal at the current clock. */
-    private fun phaseOf(sig: RoadSignal): Pair<Boolean, Int> {
-        val cycle = sig.green + sig.red
-        val t = (simClock + sig.offset) % cycle
-        return if (t < sig.green) true to (sig.green - t)
-               else false to (cycle - t)
-    }
-
-    private fun renderSignalAdvisory(destName: String) {
+    private fun renderSignal(destName: String) {
         val phaseView = findViewById<TextView>(R.id.tv_signal_phase) ?: return
         val locView   = findViewById<TextView>(R.id.tv_signal_location)
         val distView  = findViewById<TextView>(R.id.tv_signal_distance)
@@ -427,48 +425,81 @@ class HUDActivity : AppCompatActivity() {
         val countView = findViewById<TextView>(R.id.tv_signal_countdown)
         val countLbl  = findViewById<TextView>(R.id.tv_signal_countlabel)
 
-        val next = routeSignals.firstOrNull { it.posKm > traveledKm }
-        if (next == null) {
-            phaseView.text = "🟢 CORRIDOR CLEAR"
-            phaseView.setTextColor(Color.parseColor("#2DE371"))
-            locView.text  = "Arriving at $destName"
-            distView.text = "all signals behind you"
-            advView.text  = "✓ green wave complete"
-            countView.text = "★"
-            countView.setTextColor(Color.parseColor("#2DE371"))
-            countLbl.text = "arrived"
-            return
+        val color = Color.parseColor(phase.color)
+        phaseView.text = phase.label + when (phase) {
+            Phase.RED -> "  ·  NEAREST SIGNAL"
+            else      -> ""
+        }
+        phaseView.setTextColor(color)
+
+        locView.text  = signalName + if (signalSynced) "  ⟢" else ""
+        distView.text = "nearest signal · near $destName"
+
+        countView.text = "${phaseRemaining}s"
+        countView.setTextColor(color)
+        countLbl.text = phase.next
+
+        advView.text = when (phase) {
+            Phase.RED   -> if (signalSynced) "⟢ GreenSync holds your green wave" else "↘ red — ease off the throttle"
+            Phase.GREEN -> "✓ green — clear to proceed"
+            Phase.AMBER -> "⚠ amber — prepare to stop"
         }
 
-        val (green, secs) = phaseOf(next)
-        val aheadKm = (next.posKm - traveledKm).coerceAtLeast(0.0)
-        val etaToSignal = (aheadKm / cruiseSpeed * 3600).toInt()  // seconds to reach it
+        // Light up the active lamp; dim the rest.
+        setLamp(R.id.lamp_red,   phase == Phase.RED)
+        setLamp(R.id.lamp_amber, phase == Phase.AMBER)
+        setLamp(R.id.lamp_green, phase == Phase.GREEN)
+    }
 
-        val red   = Color.parseColor("#FF5247")
-        val grn   = Color.parseColor("#2DE371")
+    private fun setLamp(id: Int, on: Boolean) {
+        findViewById<View>(id)?.alpha = if (on) 1f else 0.15f
+    }
 
-        if (green) {
-            phaseView.text = "🟢 NEXT SIGNAL · GREEN"
-            phaseView.setTextColor(grn)
-            countLbl.text = "to red"
-            countView.setTextColor(grn)
-        } else {
-            phaseView.text = "🔴 NEXT RED LIGHT"
-            phaseView.setTextColor(red)
-            countLbl.text = "to green"
-            countView.setTextColor(red)
+    // ── Live destination context ─────────────────────────────────────────────
+
+    private fun startDestinationPulse(destName: String, etaMin: Int) {
+        findViewById<TextView>(R.id.tv_dest_header).text = "ARRIVING AT ${destName.uppercase()}"
+
+        // Arrival clock = now + ETA.
+        val arrival = java.util.Calendar.getInstance().apply {
+            add(java.util.Calendar.MINUTE, etaMin.coerceAtLeast(0))
         }
-        countView.text = "${secs}s"
+        val fmt = java.text.SimpleDateFormat("h:mm a", Locale.getDefault())
+        findViewById<TextView>(R.id.tv_dest_arrival).text = "~${fmt.format(arrival.time)}"
 
-        locView.text  = next.name + if (next.synced) "  ⟢" else ""
-        distView.text = "%.1f km ahead · ~%ds away".format(aheadKm, etaToSignal)
+        // Seed AQI / weather (stable per destination), parking ticks live.
+        val seed   = destName.hashCode() and 0x7fffffff
+        var aqi     = 70 + seed % 110
+        val tempC   = 22 + seed % 9
+        val sky     = listOf("☀️", "⛅", "🌧️", "🌫️")[seed % 4]
+        var parking = 8 + seed % 40
 
-        // Advisory: will the light be red when you arrive?
-        val (greenOnArrival, _) = phaseOf(next.copy(offset = next.offset + etaToSignal))
-        advView.text = when {
-            next.synced && greenOnArrival -> "⟢ hold ${cruiseSpeed} km/h — green wave synced"
-            greenOnArrival                -> "✓ clears before you arrive"
-            else                          -> "↘ ease off — red when you reach it"
+        val aqiView     = findViewById<TextView>(R.id.tv_dest_aqi)
+        val weatherView = findViewById<TextView>(R.id.tv_dest_weather)
+        val parkingView = findViewById<TextView>(R.id.tv_dest_parking)
+        weatherView.text = "$sky $tempC°C"
+
+        fun aqiBand(v: Int) = when {
+            v > 150 -> "#FF5247"
+            v > 100 -> "#FFB300"
+            else    -> "#2DE371"
+        }
+        fun render() {
+            aqiView.text = "$aqi AQI"
+            aqiView.setTextColor(Color.parseColor(aqiBand(aqi)))
+            parkingView.text = "$parking free"
+            parkingView.setTextColor(
+                Color.parseColor(if (parking < 6) "#FFB300" else "#2DE371"))
+        }
+        render()
+
+        lifecycleScope.launch {
+            while (true) {
+                delay(3000)
+                aqi     = (aqi + Random.nextInt(-4, 5)).coerceIn(40, 220)
+                parking = (parking + Random.nextInt(-3, 4)).coerceIn(0, 60)
+                render()
+            }
         }
     }
 

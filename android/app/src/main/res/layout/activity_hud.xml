@@ -96,6 +96,67 @@
             </LinearLayout>
         </com.google.android.material.card.MaterialCardView>
 
+        <!-- Destination pulse — live arrival context -->
+        <com.google.android.material.card.MaterialCardView
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:layout_marginHorizontal="16dp"
+            android:layout_marginBottom="12dp"
+            app:cardBackgroundColor="@color/surface_card"
+            app:cardCornerRadius="12dp"
+            app:cardElevation="4dp">
+
+            <LinearLayout
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:orientation="vertical"
+                android:padding="16dp">
+
+                <LinearLayout
+                    android:layout_width="match_parent"
+                    android:layout_height="wrap_content"
+                    android:orientation="horizontal"
+                    android:gravity="center_vertical">
+                    <TextView
+                        android:id="@+id/tv_dest_header"
+                        android:layout_width="0dp"
+                        android:layout_weight="1"
+                        android:layout_height="wrap_content"
+                        android:text="ARRIVING AT DESTINATION"
+                        android:textColor="@color/hint_text"
+                        android:textSize="9sp"
+                        android:letterSpacing="0.12" />
+                    <TextView
+                        android:id="@+id/tv_dest_arrival"
+                        android:layout_width="wrap_content"
+                        android:layout_height="wrap_content"
+                        android:fontFamily="@font/jetbrains_mono"
+                        android:textColor="@color/accent_green"
+                        android:textStyle="bold"
+                        android:textSize="15sp" />
+                </LinearLayout>
+
+                <LinearLayout
+                    android:layout_width="match_parent"
+                    android:layout_height="wrap_content"
+                    android:orientation="horizontal"
+                    android:layout_marginTop="12dp">
+                    <LinearLayout android:layout_width="0dp" android:layout_weight="1" android:layout_height="wrap_content" android:orientation="vertical">
+                        <TextView android:id="@+id/tv_dest_aqi" android:layout_width="wrap_content" android:layout_height="wrap_content" android:fontFamily="@font/jetbrains_mono" android:textColor="@color/text_primary" android:textSize="16sp" android:textStyle="bold" />
+                        <TextView android:layout_width="wrap_content" android:layout_height="wrap_content" android:text="air quality" android:textColor="@color/secondary_text" android:textSize="10sp" />
+                    </LinearLayout>
+                    <LinearLayout android:layout_width="0dp" android:layout_weight="1" android:layout_height="wrap_content" android:orientation="vertical">
+                        <TextView android:id="@+id/tv_dest_weather" android:layout_width="wrap_content" android:layout_height="wrap_content" android:fontFamily="@font/jetbrains_mono" android:textColor="@color/text_primary" android:textSize="16sp" android:textStyle="bold" />
+                        <TextView android:layout_width="wrap_content" android:layout_height="wrap_content" android:text="weather" android:textColor="@color/secondary_text" android:textSize="10sp" />
+                    </LinearLayout>
+                    <LinearLayout android:layout_width="0dp" android:layout_weight="1" android:layout_height="wrap_content" android:orientation="vertical">
+                        <TextView android:id="@+id/tv_dest_parking" android:layout_width="wrap_content" android:layout_height="wrap_content" android:fontFamily="@font/jetbrains_mono" android:textColor="@color/accent_green" android:textSize="16sp" android:textStyle="bold" />
+                        <TextView android:layout_width="wrap_content" android:layout_height="wrap_content" android:text="parking nearby" android:textColor="@color/secondary_text" android:textSize="10sp" />
+                    </LinearLayout>
+                </LinearLayout>
+            </LinearLayout>
+        </com.google.android.material.card.MaterialCardView>
+
         <!-- 3 stat cards -->
         <LinearLayout
             android:layout_width="match_parent"
@@ -436,28 +497,70 @@
                 <LinearLayout
                     android:layout_width="wrap_content"
                     android:layout_height="wrap_content"
-                    android:orientation="vertical"
+                    android:orientation="horizontal"
                     android:gravity="center"
                     android:layout_marginStart="12dp">
 
-                    <TextView
-                        android:id="@+id/tv_signal_countdown"
+                    <!-- 3-lamp traffic light -->
+                    <LinearLayout
                         android:layout_width="wrap_content"
                         android:layout_height="wrap_content"
-                        android:fontFamily="@font/jetbrains_mono"
-                        android:textColor="@color/text_primary"
-                        android:textSize="36sp"
-                        android:textStyle="bold"
-                        android:gravity="center" />
+                        android:orientation="vertical"
+                        android:gravity="center"
+                        android:padding="6dp"
+                        android:background="@drawable/signal_housing">
 
-                    <TextView
-                        android:id="@+id/tv_signal_countlabel"
+                        <View
+                            android:id="@+id/lamp_red"
+                            android:layout_width="18dp"
+                            android:layout_height="18dp"
+                            android:layout_margin="3dp"
+                            android:background="@drawable/lamp_oval"
+                            android:backgroundTint="#FF5247" />
+
+                        <View
+                            android:id="@+id/lamp_amber"
+                            android:layout_width="18dp"
+                            android:layout_height="18dp"
+                            android:layout_margin="3dp"
+                            android:background="@drawable/lamp_oval"
+                            android:backgroundTint="#FFB300" />
+
+                        <View
+                            android:id="@+id/lamp_green"
+                            android:layout_width="18dp"
+                            android:layout_height="18dp"
+                            android:layout_margin="3dp"
+                            android:background="@drawable/lamp_oval"
+                            android:backgroundTint="#2DE371" />
+                    </LinearLayout>
+
+                    <LinearLayout
                         android:layout_width="wrap_content"
                         android:layout_height="wrap_content"
-                        android:text="to green"
-                        android:textColor="@color/hint_text"
-                        android:textSize="10sp"
-                        android:gravity="center" />
+                        android:orientation="vertical"
+                        android:gravity="center"
+                        android:layout_marginStart="10dp">
+
+                        <TextView
+                            android:id="@+id/tv_signal_countdown"
+                            android:layout_width="wrap_content"
+                            android:layout_height="wrap_content"
+                            android:fontFamily="@font/jetbrains_mono"
+                            android:textColor="@color/text_primary"
+                            android:textSize="34sp"
+                            android:textStyle="bold"
+                            android:gravity="center" />
+
+                        <TextView
+                            android:id="@+id/tv_signal_countlabel"
+                            android:layout_width="wrap_content"
+                            android:layout_height="wrap_content"
+                            android:text="to green"
+                            android:textColor="@color/hint_text"
+                            android:textSize="10sp"
+                            android:gravity="center" />
+                    </LinearLayout>
                 </LinearLayout>
             </LinearLayout>
         </com.google.android.material.card.MaterialCardView>
