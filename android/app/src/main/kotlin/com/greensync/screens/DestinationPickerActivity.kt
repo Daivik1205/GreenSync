@@ -27,6 +27,13 @@ import androidx.lifecycle.lifecycleScope
 import androidx.recyclerview.widget.GridLayoutManager
 import androidx.recyclerview.widget.LinearLayoutManager
 import androidx.recyclerview.widget.RecyclerView
+import com.google.android.gms.location.FusedLocationProviderClient
+import com.google.android.gms.location.LocationCallback
+import com.google.android.gms.location.LocationRequest
+import com.google.android.gms.location.LocationResult
+import com.google.android.gms.location.LocationServices
+import com.google.android.gms.location.Priority
+import com.google.android.gms.tasks.CancellationTokenSource
 import com.greensync.R
 import com.greensync.services.GeocodingService
 import kotlinx.coroutines.Dispatchers
@@ -165,9 +172,7 @@ class DestinationPickerActivity : AppCompatActivity() {
     override fun onDestroy() {
         super.onDestroy()
         statusHandler.removeCallbacksAndMessages(null)
-        locationListener?.let {
-            (getSystemService(LOCATION_SERVICE) as LocationManager).removeUpdates(it)
-        }
+        stopLocationUpdates()
     }
 
     // ── Lists ──────────────────────────────────────────────────────────────
@@ -348,35 +353,120 @@ class DestinationPickerActivity : AppCompatActivity() {
 
     // ── Location ───────────────────────────────────────────────────────────
 
-    private var locationListener: LocationListener? = null
+    private val fusedClient: FusedLocationProviderClient by lazy {
+        LocationServices.getFusedLocationProviderClient(this)
+    }
+    private var cancellationTokenSource: CancellationTokenSource? = null
+    private var fusedCallback: LocationCallback? = null
+    private var lmListener: LocationListener? = null
+    private var originResolved = false
 
+    private fun hasLocationPermission() = ContextCompat.checkSelfPermission(
+        this, Manifest.permission.ACCESS_FINE_LOCATION
+    ) == PackageManager.PERMISSION_GRANTED ||
+        ContextCompat.checkSelfPermission(
+            this, Manifest.permission.ACCESS_COARSE_LOCATION
+        ) == PackageManager.PERMISSION_GRANTED
+
+    private fun locationServicesEnabled(): Boolean {
+        val lm = getSystemService(LOCATION_SERVICE) as LocationManager
+        return lm.isProviderEnabled(LocationManager.GPS_PROVIDER) ||
+               lm.isProviderEnabled(LocationManager.NETWORK_PROVIDER)
+    }
+
+    /**
+     * Resolve the user's *live* location and use it as the routing origin.
+     *
+     * Primary path is the fused provider's high-accuracy single fix (combines
+     * GPS + Wi-Fi + cell), falling back to a streamed fused update and finally
+     * to raw LocationManager on both providers for devices without Play
+     * Services. The origin used for routing is only ever the real fix — we
+     * never silently route from the hardcoded fallback once permission is
+     * granted and services are on.
+     */
     @SuppressLint("MissingPermission")
     private fun fetchLocation() {
-        val hasPermission = ContextCompat.checkSelfPermission(
-            this, Manifest.permission.ACCESS_FINE_LOCATION
-        ) == PackageManager.PERMISSION_GRANTED
-        if (!hasPermission) { setOriginChip(FALLBACK_NAME); return }
+        if (!hasLocationPermission()) { setOriginChip(FALLBACK_NAME); return }
+        if (!locationServicesEnabled())  { setOriginChip("Location off"); return }
 
-        val lm = getSystemService(LOCATION_SERVICE) as LocationManager
-        val provider = when {
-            lm.isProviderEnabled(LocationManager.GPS_PROVIDER)     -> LocationManager.GPS_PROVIDER
-            lm.isProviderEnabled(LocationManager.NETWORK_PROVIDER) -> LocationManager.NETWORK_PROVIDER
-            else -> { setOriginChip(FALLBACK_NAME); return }
+        setOriginChip("Locating…")
+
+        val cts = CancellationTokenSource()
+        cancellationTokenSource = cts
+        try {
+            fusedClient.getCurrentLocation(Priority.PRIORITY_HIGH_ACCURACY, cts.token)
+                .addOnSuccessListener { loc ->
+                    if (loc != null) onLocationResolved(loc) else startFusedUpdates()
+                }
+                .addOnFailureListener { startLocationManagerUpdates() }
+        } catch (e: Exception) {
+            startLocationManagerUpdates()
         }
-        val listener = object : LocationListener {
-            override fun onLocationChanged(loc: Location) {
-                lm.removeUpdates(this)
-                locationListener = null
-                applyLocation(loc)
+
+        // Safety net: only revert the chip label if nothing ever resolved.
+        lifecycleScope.launch {
+            delay(12000)
+            if (!originResolved) setOriginChip(FALLBACK_NAME)
+        }
+    }
+
+    /** Fused streamed updates — used when a single fix can't be computed instantly. */
+    @SuppressLint("MissingPermission")
+    private fun startFusedUpdates() {
+        if (originResolved) return
+        val request = LocationRequest.Builder(Priority.PRIORITY_HIGH_ACCURACY, 1000L)
+            .setMinUpdateIntervalMillis(500L)
+            .setMaxUpdates(1)
+            .setWaitForAccurateLocation(true)
+            .build()
+        val callback = object : LocationCallback() {
+            override fun onLocationResult(result: LocationResult) {
+                result.lastLocation?.let { onLocationResolved(it) }
             }
         }
-        locationListener = listener
-        lm.requestLocationUpdates(provider, 0L, 0f, listener)
-
-        lifecycleScope.launch {
-            kotlinx.coroutines.delay(6000)
-            if (originLat == FALLBACK_LAT && originLng == FALLBACK_LNG) setOriginChip(FALLBACK_NAME)
+        fusedCallback = callback
+        try {
+            fusedClient.requestLocationUpdates(request, callback, Looper.getMainLooper())
+                .addOnFailureListener { startLocationManagerUpdates() }
+        } catch (e: Exception) {
+            startLocationManagerUpdates()
         }
+    }
+
+    /** Raw LocationManager fallback (no Play Services): first fix from either provider wins. */
+    @SuppressLint("MissingPermission")
+    private fun startLocationManagerUpdates() {
+        if (originResolved) return
+        val lm = getSystemService(LOCATION_SERVICE) as LocationManager
+        val listener = object : LocationListener {
+            override fun onLocationChanged(loc: Location) = onLocationResolved(loc)
+            override fun onProviderEnabled(provider: String) {}
+            override fun onProviderDisabled(provider: String) {}
+            @Deprecated("deprecated in API 29")
+            override fun onStatusChanged(provider: String?, status: Int, extras: Bundle?) {}
+        }
+        lmListener = listener
+        listOf(LocationManager.GPS_PROVIDER, LocationManager.NETWORK_PROVIDER)
+            .filter { lm.isProviderEnabled(it) }
+            .forEach { lm.requestLocationUpdates(it, 0L, 0f, listener, Looper.getMainLooper()) }
+    }
+
+    private fun onLocationResolved(location: Location) {
+        if (originResolved) return
+        originResolved = true
+        stopLocationUpdates()
+        applyLocation(location)
+    }
+
+    private fun stopLocationUpdates() {
+        cancellationTokenSource?.cancel()
+        cancellationTokenSource = null
+        fusedCallback?.let { fusedClient.removeLocationUpdates(it) }
+        fusedCallback = null
+        lmListener?.let {
+            (getSystemService(LOCATION_SERVICE) as LocationManager).removeUpdates(it)
+        }
+        lmListener = null
     }
 
     private fun applyLocation(location: Location) {

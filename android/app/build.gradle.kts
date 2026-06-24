@@ -39,6 +39,8 @@ dependencies {
 
     implementation("org.osmdroid:osmdroid-android:6.1.18")
 
+    implementation("com.google.android.gms:play-services-location:21.3.0")
+
     implementation("org.eclipse.paho:org.eclipse.paho.client.mqttv3:1.2.5")
     implementation("org.eclipse.paho:org.eclipse.paho.android.service:1.1.1")
 
