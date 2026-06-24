@@ -6,14 +6,19 @@
     <uses-permission android:name="android.permission.ACCESS_COARSE_LOCATION" />
     <uses-permission android:name="android.permission.FOREGROUND_SERVICE" />
     <uses-permission android:name="android.permission.FOREGROUND_SERVICE_DATA_SYNC" />
-    <!-- Car permission — required for CarPropertyManager access on AAOS -->
+
+    <uses-permission android:name="androidx.car.app.MAP_TEMPLATES" />
+
     <uses-permission android:name="android.car.permission.CAR_SPEED" />
     <uses-permission android:name="android.car.permission.CAR_ENERGY" />
 
-    <!-- Android Auto (projected) car-data permissions -->
     <uses-permission android:name="com.google.android.gms.permission.CAR_FUEL" />
     <uses-permission android:name="com.google.android.gms.permission.CAR_SPEED" />
     <uses-permission android:name="com.google.android.gms.permission.CAR_MILEAGE" />
+
+    <uses-feature
+        android:name="android.hardware.type.automotive"
+        android:required="false" />
 
     <application
         android:name=".GreenSyncApp"
@@ -22,7 +27,6 @@
         android:theme="@style/Theme.GreenSync"
         android:allowBackup="true">
 
-        <!-- Phone entry point — introduction / home screen -->
         <activity
             android:name=".screens.IntroActivity"
             android:exported="true">
@@ -32,7 +36,6 @@
             </intent-filter>
         </activity>
 
-        <!-- Permission + service bootstrap, then destination picker -->
         <activity
             android:name=".MainActivity"
             android:exported="false" />
@@ -53,7 +56,6 @@
             android:name=".screens.VehicleActivity"
             android:exported="false" />
 
-        <!-- Android Auto Car App Service -->
         <service
             android:name=".GreenSyncCarAppService"
             android:exported="true"
@@ -64,27 +66,22 @@
             </intent-filter>
         </service>
 
-        <!-- MQTT background service -->
         <service
             android:name=".services.MqttIntentService"
             android:exported="false"
             android:foregroundServiceType="dataSync" />
 
-        <!-- ECU telemetry service (runs only on AAOS) -->
         <service
             android:name=".services.EcuTelemetryService"
             android:exported="false"
             android:foregroundServiceType="dataSync" />
 
-        <!-- Paho MQTT Android service -->
         <service android:name="org.eclipse.paho.android.service.MqttService" />
 
-        <!-- Car App API level declaration -->
         <meta-data
             android:name="androidx.car.app.minCarApiLevel"
             android:value="3" />
 
-        <!-- Required for Android Auto to recognise this as a template app -->
         <meta-data
             android:name="com.google.android.gms.car.application"
             android:resource="@xml/automotive_app_desc" />
